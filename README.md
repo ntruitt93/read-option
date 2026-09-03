@@ -114,11 +114,14 @@ cache/                  downloads and intermediate frames — gitignored
 **Working:** the full data pipeline. `refresh.py` regenerates predictions for all
 272 games from scratch in about 20 seconds once history is cached.
 
-**Not yet done:** `app/index.html` still has its data compiled in rather than
-fetching `data/*.json`. Until that split happens, a data refresh updates the JSON
-but not what the page displays. That's the next piece of work, and it's also what
-makes user picks survive deploys — `localStorage` is keyed to the origin, so as long
-as the domain is stable, picks persist across every data update automatically.
+**Working:** the app fetches `data/*.json` at load, so every refresh reaches the
+page without touching the HTML. User picks live in `localStorage`, which is keyed to
+the origin rather than the file, so they survive every deploy automatically.
+
+The app cannot be opened as a local `file://` any more — browsers block `fetch`
+from the filesystem. Serve it over HTTP (`python3 -m http.server` locally, or Pages).
+
+**Not yet done:** results entry, and restructuring the tabs around the pick loop.
 
 **Deliberately not built:** any backend. Everything is per-browser `localStorage`.
 That means no cross-device sync, no shared leaderboard, and no tamper-proof pick

@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Read Option — Week 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Karla:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --team-1:#006778; --team-2:#101820; --team-3:#D7A22A;
+  --bg:#F2F0EC; --surface:#FFFFFF; --surface-2:#EAE7E1;
+  --line:#D6D1C8; --line-strong:#B9B2A6;
+  --text:#12181A; --text-2:#5A6468; --text-3:#8A9296;
+  --good:#1E7A3C; --bad:#A32B1E; --warn:#8A6410;
+  --radius:3px;
+  --mono-num:"Oswald",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0A0E0F; --surface:#131A1C; --surface-2:#1B2426;
+    --line:#263134; --line-strong:#3A4A4E;
+    --text:#E8EDEE; --text-2:#98A5A8; --text-3:#6B7A7E;
+    --good:#4FBF74; --bad:#E4705F; --warn:#D7A22A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0A0E0F; --surface:#131A1C; --surface-2:#1B2426;
+  --line:#263134; --line-strong:#3A4A4E;
+  --text:#E8EDEE; --text-2:#98A5A8; --text-3:#6B7A7E;
+  --good:#4FBF74; --bad:#E4705F; --warn:#D7A22A;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Karla",system-ui,-apple-system,sans-serif;
+  font-size:15px; line-height:1.5;
+  font-feature-settings:"tnum" 1;
+}
+img{max-width:100%;}
+.wrap{max-width:860px;margin:0 auto;padding:0 14px 64px;}
+
+/* ---------- masthead ---------- */
+.mast{
+  background:var(--team-2); color:#fff;
+  margin:0 -14px 0; padding:20px 18px 18px;
+  border-bottom:4px solid var(--team-1);
+  position:relative; overflow:hidden;
+}
+.mast::after{
+  content:""; position:absolute; inset:auto 0 0 0; height:3px;
+  background:linear-gradient(90deg,var(--team-1) 0 33%,var(--team-3) 33% 66%,var(--team-1) 66%);
+  opacity:.55;
+}
+.mast-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;}
+.mast h1{
+  font-family:"Oswald",sans-serif; font-weight:600; letter-spacing:.02em;
+  font-size:clamp(26px,7vw,40px); line-height:.95; margin:0; text-transform:none;
+}
+.mast h1 span{display:block;font-size:.42em;font-weight:300;letter-spacing:.18em;color:var(--team-3);margin-bottom:5px;}
+.mast-meta{font-size:12.5px;color:#B7C4C7;line-height:1.7;}
+.mast-meta b{color:#fff;font-weight:500;}
+
+/* ---------- notice ---------- */
+.notice{
+  background:var(--surface-2); border-left:3px solid var(--warn);
+  padding:12px 14px; margin:16px 0; font-size:13.5px; color:var(--text-2);
+}
+.notice h3{margin:0 0 5px;font-size:13.5px;font-weight:700;color:var(--text);font-family:"Karla",sans-serif;}
+.notice ul{margin:6px 0 0;padding-left:17px;}
+.notice li{margin:3px 0;}
+
+/* ---------- section heads ---------- */
+.shead{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  margin:30px 0 10px;padding-bottom:7px;border-bottom:2px solid var(--line-strong);
+}
+.shead h2{font-family:"Oswald",sans-serif;font-weight:500;font-size:19px;margin:0;letter-spacing:.01em;}
+.shead .sub{font-size:12px;color:var(--text-3);}
+
+/* ---------- game rows ---------- */
+.game{
+  background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--radius); margin-bottom:8px; overflow:hidden;
+}
+.game.dis{border-left:3px solid var(--team-3);}
+.grow{
+  display:grid; grid-template-columns:1fr auto; gap:10px;
+  padding:11px 13px; cursor:pointer; align-items:center;
+  background:none;border:0;width:100%;text-align:left;color:inherit;font:inherit;
+}
+.grow:focus-visible{outline:2px solid var(--team-1);outline-offset:-2px;}
+.matchup{display:flex;align-items:center;gap:8px;min-width:0;}
+.tag{
+  font-family:"Oswald",sans-serif;font-weight:500;font-size:12.5px;letter-spacing:.04em;
+  padding:3px 6px;border-radius:2px;color:#fff;flex:none;min-width:38px;text-align:center;
+}
+.at{color:var(--text-3);font-size:12px;flex:none;}
+.gwhen{font-size:11.5px;color:var(--text-3);margin-top:2px;}
+.pickbox{text-align:right;flex:none;}
+.pickteam{font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;line-height:1;}
+.confnum{font-size:11.5px;color:var(--text-2);margin-top:3px;}
+.meter{height:4px;background:var(--surface-2);position:relative;}
+.meter i{display:block;height:100%;background:var(--team-1);}
+.meter.adj i{background:var(--team-3);}
+
+/* ---------- detail ---------- */
+.detail{display:none;padding:0 13px 14px;border-top:1px solid var(--line);}
+.game.open .detail{display:block;}
+.dgrid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:13px;}
+@media(min-width:620px){.dgrid{grid-template-columns:1fr 1fr;}}
+.panel h4{
+  margin:0 0 7px;font-size:11.5px;font-weight:700;color:var(--text-3);
+  letter-spacing:.06em;font-family:"Karla",sans-serif;
+}
+table.kv{width:100%;border-collapse:collapse;font-size:13px;}
+table.kv td{padding:3.5px 0;border-bottom:1px solid var(--line);}
+table.kv td:last-child{text-align:right;font-family:var(--mono-num);font-weight:400;}
+table.kv tr:last-child td{border-bottom:0;}
+.pos{color:var(--good);} .neg{color:var(--bad);}
+.scorelist{display:flex;gap:7px;flex-wrap:wrap;}
+.scorechip{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:2px;
+  padding:6px 9px;font-family:var(--mono-num);font-size:14px;font-weight:500;
+}
+.scorechip em{display:block;font-style:normal;font-size:10.5px;color:var(--text-3);font-family:"Karla",sans-serif;font-weight:400;}
+.hint{font-size:11.5px;color:var(--text-3);margin-top:7px;line-height:1.45;}
+
+/* ---------- adjust controls ---------- */
+.adj{margin-top:6px;padding-top:12px;border-top:2px solid var(--line-strong);}
+.ctl{margin-bottom:14px;}
+.ctl-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px;}
+.ctl-name{font-size:13px;font-weight:700;}
+.ctl-name small{font-weight:400;color:var(--text-3);font-size:11.5px;display:block;line-height:1.35;}
+.ctl-val{font-family:var(--mono-num);font-size:14px;font-weight:500;flex:none;}
+.ctl-val.off{color:var(--text-3);}
+.sliderwrap{position:relative;padding:3px 0;}
+.dead{
+  position:absolute;top:50%;transform:translateY(-50%);height:6px;
+  background:repeating-linear-gradient(45deg,var(--line) 0 3px,transparent 3px 6px);
+  pointer-events:none;border-radius:2px;
+}
+input[type=range]{width:100%;margin:0;position:relative;accent-color:var(--team-1);}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:1px;}
+.toggle{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;}
+.toggle input{width:17px;height:17px;accent-color:var(--team-1);flex:none;}
+.result{
+  background:var(--surface-2);border-left:3px solid var(--team-1);
+  padding:9px 11px;font-size:13px;margin-top:4px;
+}
+.result b{font-family:var(--mono-num);font-size:15px;font-weight:500;}
+.saved{font-size:11px;color:var(--good);margin-left:6px;}
+
+/* ---------- scoreboard ---------- */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px;}
+.tracks{width:100%;border-collapse:collapse;font-size:13.5px;}
+.tracks th{
+  text-align:right;font-size:11px;color:var(--text-3);font-weight:700;
+  letter-spacing:.05em;padding:0 0 6px;border-bottom:1px solid var(--line);
+}
+.tracks th:first-child{text-align:left;}
+.tracks td{padding:8px 0;border-bottom:1px solid var(--line);text-align:right;font-family:var(--mono-num);}
+.tracks td:first-child{text-align:left;font-family:"Karla",sans-serif;}
+.tracks tr:last-child td{border-bottom:0;}
+.tracks .you td{background:var(--surface-2);}
+.empty{color:var(--text-3);font-size:13px;text-align:center;padding:22px 10px;line-height:1.6;}
+
+/* ---------- theme picker ---------- */
+.themebar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.themebar select{
+  font:inherit;font-size:13px;padding:5px 8px;background:var(--surface);
+  color:var(--text);border:1px solid var(--line-strong);border-radius:2px;
+}
+footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-3);line-height:1.65;}
+
+/* ---------- tabs ---------- */
+.tabs{
+  display:flex;gap:0;margin:0 -14px;padding:0 14px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:20;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.tabs button{
+  font:inherit;font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;
+  letter-spacing:.03em;background:none;border:0;border-bottom:3px solid transparent;
+  color:var(--text-3);padding:12px 14px;cursor:pointer;white-space:nowrap;flex:none;
+}
+.tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--team-1);}
+.tabs button:focus-visible{outline:2px solid var(--team-1);outline-offset:-3px;}
+.view{display:none;} .view.on{display:block;}
+
+/* ---------- week picker ---------- */
+.weekbar{display:flex;align-items:center;gap:8px;margin:16px 0 4px;flex-wrap:wrap;}
+.weekbar select,.segbtn{
+  font:inherit;font-size:13px;padding:6px 10px;background:var(--surface);
+  color:var(--text);border:1px solid var(--line-strong);border-radius:2px;cursor:pointer;
+}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:2px;overflow:hidden;}
+.seg button{
+  font:inherit;font-size:13px;padding:6px 12px;background:var(--surface);
+  color:var(--text-2);border:0;border-right:1px solid var(--line-strong);cursor:pointer;
+}
+.seg button:last-child{border-right:0;}
+.seg button[aria-pressed=true]{background:var(--team-1);color:#fff;}
+
+/* ---------- schedule list ---------- */
+.daygroup{margin-top:18px;}
+.dayhead{
+  font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;
+  padding:5px 0;border-bottom:2px solid var(--line-strong);margin-bottom:2px;
+}
+.dayhead span{color:var(--text-3);font-weight:300;font-size:12.5px;margin-left:7px;}
+.srow{
+  display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;
+  padding:9px 2px;border-bottom:1px solid var(--line);font-size:13.5px;
+}
+.stime{font-family:var(--mono-num);font-size:13px;color:var(--text-2);}
+.steams{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap;}
+.svenue{font-size:11.5px;color:var(--text-3);width:100%;}
+.sfav{font-family:var(--mono-num);font-size:13px;text-align:right;white-space:nowrap;}
+.sfav em{font-style:normal;color:var(--text-3);font-size:11.5px;display:block;}
+.intl{
+  display:inline-block;font-size:10px;letter-spacing:.05em;padding:1px 5px;
+  border:1px solid var(--team-3);color:var(--warn);border-radius:2px;vertical-align:1px;
+}
+
+/* ---------- tv grid ---------- */
+.gridscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;}
+.tvgrid{position:relative;min-width:640px;}
+.ruler{
+  display:flex;position:relative;height:22px;border-bottom:1px solid var(--line-strong);
+  margin-bottom:6px;
+}
+.tick{
+  position:absolute;top:0;font-size:10.5px;color:var(--text-3);
+  font-family:var(--mono-num);padding-left:3px;border-left:1px solid var(--line);
+  height:100%;line-height:22px;
+}
+.tvrow{position:relative;height:32px;margin-bottom:3px;}
+.tvrow::before{
+  content:"";position:absolute;inset:0;background:var(--surface-2);opacity:.5;
+}
+.block{
+  position:absolute;top:0;height:32px;border-radius:2px;overflow:hidden;
+  display:flex;align-items:center;color:#fff;font-size:11.5px;
+  font-family:"Oswald",sans-serif;font-weight:400;letter-spacing:.02em;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.block .half{flex:1 1 50%;padding:0 6px;display:flex;align-items:center;height:100%;min-width:0;}
+.block .half:last-child{justify-content:flex-end;}
+.block b{font-weight:600;}
+.tvnote{font-size:11.5px;color:var(--text-3);margin-top:9px;line-height:1.5;}
+
+
+/* ---------- standings / scenarios ---------- */
+.stgroup{margin-top:16px;}
+table.stand{width:100%;}
+table.stand th:first-child,table.stand td:first-child{text-align:left;}
+table.stand td{padding:7px 0;}
+.stname{display:flex;align-items:center;gap:7px;}
+.rk{font-family:var(--mono-num);font-size:11.5px;color:var(--text-3);width:15px;flex:none;}
+.hi{font-weight:600;}
+table.stand tr.in td{background:var(--surface-2);}
+.scenrow{
+  display:grid;grid-template-columns:1fr 1fr auto;gap:7px;align-items:center;
+  padding:6px 0;border-bottom:1px solid var(--line);
+}
+.pk{
+  font:inherit;font-family:"Oswald",sans-serif;font-weight:500;font-size:13.5px;
+  padding:8px 6px;border:1px solid var(--line-strong);background:var(--surface);
+  color:var(--text-2);border-radius:2px;cursor:pointer;
+}
+.pk.on{background:var(--c);color:#fff;border-color:var(--c);}
+.pk:focus-visible{outline:2px solid var(--team-1);outline-offset:1px;}
+.scenwp{font-family:var(--mono-num);font-size:11.5px;color:var(--text-3);white-space:nowrap;}
+.scenbar{font-size:12.5px;color:var(--text-2);margin:10px 0;min-height:20px;}
+
+
+/* ---------- territory map ---------- */
+#mapSvg-host svg{width:100%;height:auto;display:block;background:var(--surface-2);border-radius:2px;}
+#mapSvg-host path{stroke:none;}
+#mapSvg-host g{cursor:pointer;}
+#mapSvg-host .stateline{fill:none;stroke:rgba(0,0,0,.30);stroke-width:.6;pointer-events:none;}
+:root[data-theme=dark] #mapSvg-host .stateline{stroke:rgba(255,255,255,.22);}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) #mapSvg-host .stateline{stroke:rgba(255,255,255,.22);}}
+.mapcall{
+  background:var(--surface-2);border-left:3px solid var(--team-1);
+  padding:10px 12px;font-size:13.5px;margin:10px 0;line-height:1.5;
+}
+.mappick{font-size:13px;color:var(--text-2);min-height:22px;margin:8px 0 2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.scrub{display:flex;align-items:center;gap:10px;margin:12px 0 2px;}
+.scrub input{flex:1;accent-color:var(--team-1);}
+.scrub .lbl{font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;min-width:62px;}
+
+
+/* ---------- survivor ---------- */
+.survrow{display:grid;grid-template-columns:70px 1fr auto auto;gap:9px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line);}
+.survrow.sel{background:var(--surface-2);}
+.survopp{font-size:12px;color:var(--text-3);}
+.survp{font-family:var(--mono-num);font-size:13.5px;font-weight:500;}
+.survcost{font-family:var(--mono-num);font-size:11.5px;color:var(--text-3);min-width:38px;text-align:right;}
+.survcost.warn{color:var(--bad);}
+.survcost b{color:var(--good);font-weight:600;}
+.pathgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:6px;margin-top:8px;}
+.pathcell{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:6px 4px;text-align:center;}
+.pathcell em{display:block;font-style:normal;font-size:10.5px;color:var(--text-3);margin-bottom:4px;}
+.pathcell i{display:block;font-style:normal;font-family:var(--mono-num);font-size:11px;color:var(--text-2);margin-top:4px;}
+.pathnote{font-size:13px;color:var(--text-2);margin-top:6px;}
+.survstatus{background:var(--surface-2);border-left:3px solid var(--team-1);padding:10px 12px;font-size:13.5px;margin:10px 0;}
+.survstatus .dead{color:var(--bad);font-weight:700;}
+
+
+/* ---------- trivia ---------- */
+.trivcard{background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:16px;margin-top:14px;}
+.trivq{font-size:16.5px;line-height:1.45;margin:0 0 14px;}
+.trivopts{display:grid;gap:7px;}
+.trivopts button{
+  font:inherit;font-size:14.5px;text-align:left;padding:11px 13px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--line-strong);border-radius:2px;color:var(--text);
+}
+.trivopts button:disabled{cursor:default;}
+.trivopts button.right{background:var(--good);border-color:var(--good);color:#fff;font-weight:600;}
+.trivopts button.wrong{background:var(--bad);border-color:var(--bad);color:#fff;}
+.trivwhy{margin-top:13px;padding-top:12px;border-top:1px solid var(--line);font-size:13.5px;color:var(--text-2);line-height:1.5;}
+.trivwhy b{color:var(--text);}
+.trivstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+.tsbox{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:10px;text-align:center;}
+.tsbox b{display:block;font-family:"Oswald",sans-serif;font-size:24px;font-weight:600;line-height:1.1;}
+.tsbox em{font-style:normal;font-size:11px;color:var(--text-3);}
+.trivdone{font-size:13.5px;color:var(--text-2);margin-top:12px;}
+
+
+/* ---------- collapsible sections ---------- */
+.sec{border:1px solid var(--line);border-radius:2px;background:var(--surface);margin-top:14px;overflow:hidden;}
+.sechead{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  font:inherit;font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;
+  background:var(--surface-2);border:0;border-bottom:1px solid var(--line);
+  padding:11px 13px;cursor:pointer;color:var(--text);text-align:left;
+}
+.sechead .chev{font-size:12px;color:var(--text-3);transition:transform .15s;}
+.sec.closed .sechead{border-bottom:0;}
+.sec.closed .chev{transform:rotate(-90deg);}
+.sec.closed .secbody{display:none;}
+.secbody{padding:13px;}
+.sechead small{font-weight:400;font-family:"Karla",sans-serif;font-size:12px;color:var(--text-3);display:block;margin-top:2px;}
+
+/* ---------- dominance bars ---------- */
+.dombar{display:grid;grid-template-columns:52px 1fr 52px;gap:8px;align-items:center;padding:5px 0;}
+.domteam{font-family:"Oswald",sans-serif;font-size:12.5px;font-weight:500;}
+.domteam.r{text-align:right;}
+.domtrack{position:relative;height:22px;background:var(--surface-2);border-radius:2px;}
+.domtrack::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line-strong);}
+.domfill{position:absolute;top:3px;height:16px;border-radius:1px;}
+.domtick{position:absolute;top:0;bottom:0;width:2px;background:var(--text);opacity:.55;}
+.domlabels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-3);margin:2px 0 8px;}
+.domlegend{font-size:11.5px;color:var(--text-3);line-height:1.5;margin-top:10px;}
+
+/* ---------- quadrant ---------- */
+.quadwrap svg{width:100%;height:auto;display:block;}
+.quadwrap text{font-family:"Oswald",sans-serif;}
+.axlab{font-size:10px;fill:var(--text-3);font-family:"Karla",sans-serif;}
+.qgrid{stroke:var(--line);stroke-width:1;}
+.qmid{stroke:var(--line-strong);stroke-width:1;}
+.qlab{font-size:9px;fill:var(--text-3);font-family:"Karla",sans-serif;}
+
+
+/* ---------- flair: type scale, colour, icons ---------- */
+body{font-size:16px;}
+.wrap{max-width:880px;}
+.mast h1{font-size:clamp(30px,8.5vw,46px);}
+.mast h1 span{letter-spacing:.22em;}
+.mast::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.10;
+  background:repeating-linear-gradient(90deg,transparent 0 46px,#fff 46px 47px);
+}
+.pickteam{font-size:20px;}
+.confnum{font-size:12.5px;}
+.meter{height:6px;}
+.meter i{background:linear-gradient(90deg,var(--team-1),var(--team-3));}
+.tabs button{font-size:15px;padding:13px 15px;}
+.shead h2{font-size:21px;}
+table.kv{font-size:13.5px;}
+.tag{font-size:13px;padding:4px 7px;min-width:42px;}
+.srow,.tracks{font-size:14px;}
+.trivq{font-size:17.5px;}
+.notice{border-left-width:4px;background:linear-gradient(90deg,var(--surface-2),transparent);}
+.notice h3::before{
+  content:"";display:inline-block;width:19px;height:13px;margin-right:7px;vertical-align:-1px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'><ellipse cx='12' cy='8' rx='11' ry='6.4' fill='%238B4A2B' stroke='%23F5E9DC' stroke-width='1.4'/><path d='M7 8h10' stroke='%23F5E9DC' stroke-width='1.4' stroke-linecap='round'/><path d='M9 6.2v3.6M11 6v4M13 6v4M15 6.2v3.6' stroke='%23F5E9DC' stroke-width='1.2' stroke-linecap='round'/></svg>") center/contain no-repeat;
+}
+.shead{border-bottom-color:var(--team-1);}
+.dayhead{border-bottom-color:var(--team-1);}
+.sechead{border-left:4px solid var(--team-3);}
+.game.dis{border-left-width:4px;}
+
+/* ---------- first-down marker slider thumbs ---------- */
+.sliderwrap input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:30px;}
+.sliderwrap input[type=range]::-webkit-slider-runnable-track{
+  height:7px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-strong);
+}
+.sliderwrap input[type=range]::-moz-range-track{
+  height:7px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line-strong);
+}
+.sliderwrap input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:26px;height:30px;margin-top:-12px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 30'><rect x='11' y='9' width='4' height='21' rx='1.5' fill='%23B4470F'/><rect x='2' y='0' width='22' height='13' rx='2.5' fill='%23F97316' stroke='%23FFF3E6' stroke-width='2'/><rect x='6' y='4' width='14' height='2' rx='1' fill='%23FFF3E6' opacity='.85'/></svg>") center/contain no-repeat;border:0;cursor:grab;
+}
+.sliderwrap input[type=range]::-moz-range-thumb{
+  width:26px;height:30px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 30'><rect x='11' y='9' width='4' height='21' rx='1.5' fill='%23B4470F'/><rect x='2' y='0' width='22' height='13' rx='2.5' fill='%23F97316' stroke='%23FFF3E6' stroke-width='2'/><rect x='6' y='4' width='14' height='2' rx='1' fill='%23FFF3E6' opacity='.85'/></svg>") center/contain no-repeat;border:0;cursor:grab;
+}
+.sliderwrap input[type=range]:active::-webkit-slider-thumb{cursor:grabbing;}
+.dead{height:7px;}
+
+/* ---------- your-read + lock ---------- */
+.adjhead{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--text-3);letter-spacing:.06em;font-family:"Karla",sans-serif;text-transform:uppercase;}
+.adjintro{margin:0 0 13px;font-size:13px;line-height:1.55;color:var(--text-2);}
+.lockwrap{margin-top:14px;padding-top:13px;border-top:2px solid var(--team-3);}
+.lockrow{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.lockbtn{
+  font:inherit;font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;letter-spacing:.02em;
+  padding:14px 8px;border:2px solid var(--line-strong);background:var(--surface-2);
+  color:var(--text-2);border-radius:3px;cursor:pointer;transition:transform .08s;
+}
+.lockbtn:hover{border-color:var(--c);color:var(--text);}
+.lockbtn:active{transform:scale(.97);}
+.lockbtn.on{background:var(--c);border-color:var(--c);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.28);}
+.lockbtn:focus-visible{outline:2px solid var(--team-3);outline-offset:2px;}
+.lockstate{margin-top:9px;font-size:13px;color:var(--text-2);}
+.lockstate.over{color:var(--warn);}
+.lockstate b{color:var(--text);}
+.lockbadge{display:none;}
+.lockbadge.on{
+  display:inline-block;margin-top:5px;font-size:11px;font-weight:700;letter-spacing:.04em;
+  padding:2px 7px;border-radius:2px;background:var(--team-1);color:#fff;text-transform:uppercase;
+}
+.lockbadge.on.over{background:var(--warn);}
+@media (prefers-reduced-motion:reduce){.lockbtn{transition:none;}}
+
+
+/* ---------- bracket ---------- */
+.impt{margin:12px 0 4px;padding:9px 11px;background:var(--surface-2);border-left:3px solid var(--team-3);}
+.scenrow.imported{background:linear-gradient(90deg,var(--surface-2),transparent);}
+.bgrid{display:grid;grid-template-columns:1fr;gap:16px;}
+@media(min-width:600px){.bgrid{grid-template-columns:1fr 1fr;}}
+.brnd{margin-bottom:12px;}
+.brlab{display:block;font-size:11px;letter-spacing:.06em;color:var(--text-3);font-weight:700;text-transform:uppercase;margin-bottom:5px;}
+.bx{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px;}
+.bx.empty{opacity:.4;}
+.bxslot{background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:2px;padding:11px;text-align:center;color:var(--text-3);}
+.bxteam{
+  font:inherit;font-family:"Oswald",sans-serif;font-weight:600;font-size:15px;
+  padding:11px 6px;border:2px solid var(--line-strong);background:var(--surface-2);
+  color:var(--text-2);border-radius:3px;cursor:pointer;position:relative;transition:transform .08s;
+}
+.bxteam em{font-style:normal;font-size:10px;color:var(--text-3);position:absolute;left:6px;top:4px;}
+.bxteam:hover{border-color:var(--c);color:var(--text);}
+.bxteam:active{transform:scale(.97);}
+.bxteam.won{background:var(--c);border-color:var(--c);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.25);}
+.bxteam.won em{color:rgba(255,255,255,.75);}
+.bxteam.out{opacity:.42;text-decoration:line-through;}
+.brnd.sb{margin-top:6px;padding-top:12px;border-top:2px solid var(--team-3);}
+.brnd.sb .bx{max-width:340px;}
+.champ{margin-top:10px;font-family:"Oswald",sans-serif;font-size:19px;font-weight:600;display:flex;align-items:center;gap:9px;}
+
+/* ---------- confetti ---------- */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;}
+.confetti i{position:absolute;top:-6vh;border-radius:1px;animation:cfall linear forwards;}
+@keyframes cfall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1;}
+  100%{transform:translateY(108vh) rotate(680deg);opacity:.85;}
+}
+@media (prefers-reduced-motion:reduce){.confetti{display:none;}}
+
+
+/* ---------- orientation ---------- */
+.orient{margin:16px 0 4px;font-size:14px;line-height:1.6;color:var(--text-2);}
+.orient p{margin:0 0 9px;}
+.orient b{color:var(--text);}
+
+/* ---------- backtest placeholder ---------- */
+.backtest{margin-top:14px;padding-top:13px;border-top:2px solid var(--team-3);}
+.bthead{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);font-weight:700;margin-bottom:6px;}
+.btnote{font-size:12.5px;color:var(--text-3);margin-top:9px;line-height:1.5;}
+
+/* ---------- today ---------- */
+.todayhead{
+  background:var(--team-2);color:#fff;margin:14px -14px 0;padding:15px 18px;
+  border-left:5px solid var(--team-3);
+}
+.todayhead h2{font-family:"Oswald",sans-serif;font-weight:600;font-size:23px;margin:0;letter-spacing:.01em;}
+.todayhead .sub{font-size:13px;color:#B7C4C7;margin-top:3px;}
+.watchrow{
+  display:grid;grid-template-columns:44px 1fr auto;gap:11px;align-items:center;
+  padding:11px 0;border-bottom:1px solid var(--line);
+}
+.wscore{
+  font-family:"Oswald",sans-serif;font-weight:600;font-size:19px;text-align:center;
+  border-radius:3px;padding:6px 2px;line-height:1;
+}
+.wscore em{display:block;font-style:normal;font-size:8.5px;letter-spacing:.05em;font-weight:400;margin-top:2px;opacity:.8;}
+.w-must{background:var(--team-3);color:#1a1200;}
+.w-good{background:var(--surface-2);color:var(--text);border:1px solid var(--line-strong);}
+.w-redzone{background:transparent;color:var(--text-3);border:1px dashed var(--line-strong);}
+.wmatch{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0;}
+.wmeta{font-size:11.5px;color:var(--text-3);width:100%;margin-top:2px;}
+.wpick{text-align:right;font-size:12px;white-space:nowrap;}
+.wpick b{font-family:"Oswald",sans-serif;font-size:15px;font-weight:600;display:block;}
+.wpick .none{color:var(--text-3);font-size:11.5px;}
+.tierlab{
+  font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--text-3);margin:16px 0 2px;padding-bottom:4px;border-bottom:2px solid var(--line-strong);
+}
+.mypicks{margin-top:8px;}
+.mpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-top:8px;}
+.mpcell{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:7px 5px;text-align:center;}
+.mpcell.over{border-color:var(--warn);border-width:2px;}
+.mpcell i{display:block;font-style:normal;font-family:var(--mono-num);font-size:11px;color:var(--text-2);margin-top:3px;}
+.mpcell em{display:block;font-style:normal;font-size:9px;color:var(--warn);text-transform:uppercase;letter-spacing:.04em;margin-top:2px;}
+
+
+/* ---------- field hash marks on the page edges ---------- */
+body::before, body::after{
+  content:"";position:fixed;top:0;bottom:0;width:11px;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(180deg,
+    var(--line-strong) 0 2px, transparent 2px 26px);
+  opacity:.30;
+}
+body::before{left:0;} body::after{right:0;}
+@media(min-width:760px){
+  body::before,body::after{width:15px;
+    background:repeating-linear-gradient(180deg,var(--line-strong) 0 2px, transparent 2px 22px);}
+}
+.wrap{position:relative;z-index:2;}
+.mast{position:relative;z-index:3;}
+
+/* ---------- qb passing chart ---------- */
+.qbpick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.qbpick select{font:inherit;font-size:14px;padding:7px 9px;background:var(--surface);color:var(--text);border:1px solid var(--line-strong);border-radius:2px;max-width:100%;}
+.qbtot{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:7px;margin:11px 0 14px;}
+.qbtot div{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:8px 6px;text-align:center;}
+.qbtot b{display:block;font-family:"Oswald",sans-serif;font-size:19px;font-weight:600;line-height:1.1;}
+.qbtot em{font-style:normal;font-size:10px;color:var(--text-3);letter-spacing:.03em;}
+.zgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.zcell{border:1px solid var(--line-strong);border-radius:2px;padding:9px 6px;text-align:center;position:relative;min-height:88px;}
+.zcell .zc{font-family:"Oswald",sans-serif;font-size:19px;font-weight:600;line-height:1.1;}
+.zcell .ze{font-family:var(--mono-num);font-size:12px;margin-top:3px;}
+.zcell .zn{font-size:10.5px;color:var(--text-3);margin-top:4px;}
+.zcell .zt{font-size:10.5px;margin-top:2px;}
+.zcell.dim{opacity:.45;}
+.zrowlab{grid-column:1/-1;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);font-weight:700;margin-top:9px;}
+.zaim{text-align:center;font-size:10.5px;color:var(--text-3);margin-top:9px;letter-spacing:.05em;}
+.pos2{color:var(--good);} .neg2{color:var(--bad);}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="mast">
+  <div class="mast-top">
+    <h1><span>2026 &middot; WEEK 1</span>The Read Option</h1>
+    <div class="mast-meta" id="mastMeta"></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-v="today">Today</button>
+  <button role="tab" aria-selected="false" data-v="slate">Slate</button>
+  <button role="tab" aria-selected="false" data-v="sched">Schedule</button>
+  <button role="tab" aria-selected="false" data-v="stand">Standings</button>
+  <button role="tab" aria-selected="false" data-v="scen">Scenarios</button>
+  <button role="tab" aria-selected="false" data-v="map">Territory</button>
+  <button role="tab" aria-selected="false" data-v="surv">Survivor</button>
+  <button role="tab" aria-selected="false" data-v="triv">Daily</button>
+  <button role="tab" aria-selected="false" data-v="stats">Stats</button>
+</nav>
+
+<section class="view on" id="v-today">
+  <div id="todayBody"></div>
+</section>
+
+<section class="view" id="v-slate">
+
+<div class="orient">
+  <p><b>What this is.</b> A prediction model for the 2026 season, plus the tools to argue with it. It rates every team from play-by-play data, projects each game, and keeps score of how it does &mdash; against the closing line, against simple baselines, and against you.</p>
+  <p><b>How to use it.</b> <b>Today</b> is the Sunday-morning view: what's on, what's worth watching, where your picks stand. <b>Slate</b> is where you dig into a game, nudge the model with what it can't see, and lock a pick. The rest &mdash; schedule, standings, playoff scenarios, a territory map, a survivor solver, daily trivia and season stats &mdash; are there when you want them.</p>
+</div>
+
+<div class="notice">
+  <h3>What the model can't see this week</h3>
+  <ul>
+    <li>No 2026 starters are declared yet, so every quarterback is carried over from last season. Free agency, the draft, and camp battles are all invisible.</li>
+    <li>Injury reports don't exist until games are played. Availability is zeroed for all 16 games.</li>
+    <li>Treat large disagreements with the market as the model missing personnel news, not as an edge.</li>
+  </ul>
+</div>
+
+<div class="shead">
+  <h2>The slate</h2>
+  <div class="sub" id="slateSub"></div>
+</div>
+<div id="slate"></div>
+
+<div class="shead">
+  <h2>Season scoreboard</h2>
+  <div class="sub" id="ovCount">four tracks</div>
+</div>
+<div class="board">
+  <table class="tracks">
+    <thead><tr><th>Track</th><th>Picks</th><th>SU%</th><th>Brier</th></tr></thead>
+    <tbody id="tracks"></tbody>
+  </table>
+  <div class="empty" id="boardEmpty">
+    Nothing scored yet &mdash; records fill in once Week 1 results land. Four tracks will run in parallel:
+    the model alone, the model with your sliders, your submitted picks, and the closing line.
+  </div>
+  <div class="backtest">
+    <div class="bthead">How the model did in testing &mdash; 2025, never used to fit anything</div>
+    <table class="tracks stand"><tbody>
+      <tr><td>Straight-up picks</td><td class="hi">60.1%</td><td>163 of 271</td></tr>
+      <tr><td>Always pick the home team</td><td>53.9%</td><td>146 of 271</td></tr>
+      <tr><td>Margin error</td><td class="hi">10.28 pts</td><td>line: 9.73</td></tr>
+      <tr><td>Brier score</td><td class="hi">.2230</td><td>line: .2121</td></tr>
+    </tbody></table>
+    <div class="btnote">We beat the naive baselines comfortably and lose to the betting market. That gap is honest and it is the thing we're trying to close.</div>
+  </div>
+</div>
+
+</section>
+
+<section class="view" id="v-sched">
+  <div class="weekbar">
+    <label for="wkSel" style="font-size:13px;">Week</label>
+    <select id="wkSel"></select>
+    <div class="seg" role="group">
+      <button id="btnList" aria-pressed="true">List</button>
+      <button id="btnGrid" aria-pressed="false">Viewing grid</button>
+    </div>
+  </div>
+  <div id="schedBody"></div>
+</section>
+
+
+<section class="view" id="v-stand">
+  <div class="weekbar">
+    <div class="seg" role="group">
+      <button data-s="division" aria-pressed="true">Division</button>
+      <button data-s="conference" aria-pressed="false">Conference</button>
+      <button data-s="league" aria-pressed="false">League</button>
+    </div>
+  </div>
+  <div id="standBody"></div>
+</section>
+
+<section class="view" id="v-scen">
+  <div class="weekbar">
+    <label for="scenSel" style="font-size:13px;">Week</label>
+    <select id="scenSel"></select>
+  </div>
+  <label class="toggle impt"><input type="checkbox" id="impPicks">
+    <span>Use my locked picks from the Slate tab</span></label>
+  <div class="scenbar" id="scenCount"></div>
+  <div id="scenGames"></div>
+  <div id="scenOdds"></div>
+  <div class="sec" id="secBracket" style="margin-top:18px;">
+    <button class="sechead">If the playoffs started tomorrow
+      <small>seeded from the current picture &middot; click through to a champion</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div id="bracketBody"></div>
+      <div class="tvnote">Seeds come from resolving every unforced game to its favourite, so this is the bracket if the rest of the season plays to form. Reseeding follows the real rule: the top surviving seed always draws the lowest one left. Changing an earlier round clears the rounds after it.</div>
+    </div>
+  </div>
+  <div class="tvnote">Forced results are treated as certain; every other game is simulated from the model's win probability. Tiebreakers follow the NFL ladder through strength of schedule and reproduce the actual playoff field for all six seasons since the 14-team format began.</div>
+</section>
+
+
+<section class="view" id="v-map">
+  <div class="weekbar">
+    <div class="seg" role="group">
+      <button data-ms="2026" aria-pressed="true">2026 start</button>
+      <button data-ms="2025" aria-pressed="false">2025 replay</button>
+    </div>
+  </div>
+  <div class="weekbar">
+    <div class="seg" role="group">
+      <button data-mm="conquest" aria-pressed="true">Conquest</button>
+      <button data-mm="home" aria-pressed="false">Home markets</button>
+      <button data-mm="weekly" aria-pressed="false">Weekly</button>
+    </div>
+  </div>
+  <div class="scrub" id="mapWeekWrap" style="display:none;">
+    <span class="lbl" id="mapWeekLabel">Week 18</span>
+    <input type="range" id="mapWeek" min="1" max="18" value="18" step="1" aria-label="Week">
+  </div>
+  <div class="mapcall" id="mapCallout"></div>
+  <div class="tvnote" id="modeNote" style="margin:-4px 0 10px;"></div>
+  <div id="mapSvg-host"></div>
+  <div class="mappick" id="mapPick"></div>
+  <div id="mapBoard"></div>
+  <div class="tvnote">Each county is assigned to the team whose stadium is nearest, which stands in for TV market boundaries &mdash; Nielsen's actual designated market areas are licensed data we don't reproduce. Shared markets are split with offset centers, so the New York and Los Angeles pairs each divide their metro.</div>
+</section>
+
+
+<section class="view" id="v-surv">
+  <div class="weekbar">
+    <label for="survSel" style="font-size:13px;">Week</label>
+    <select id="survSel"></select>
+    <button id="survReset" class="segbtn">Reset entry</button>
+  </div>
+  <div class="survstatus" id="survStatus"></div>
+  <div id="survBoard"></div>
+  <div id="survPath"></div>
+  <div id="survHist"></div>
+  <div class="tvnote">One team per week, never twice, and a loss ends your entry. The best remaining path is solved exactly &mdash; assigning teams to weeks to maximise the product of win probabilities, which is a linear assignment problem, not a week-by-week greedy choice. The percentage beside each team is what taking it now costs your remaining path; picking the strongest available team is often not optimal because it spends that team when a later week needs it more.</div>
+</section>
+
+
+<section class="view" id="v-triv">
+  <div class="trivcard" id="trivCard"></div>
+  <div class="trivstats" id="trivStats"></div>
+  <div class="tvnote">One question a day. Every question is generated from the same tables this model is built on &mdash; opponent-adjusted EPA splits, 2025 results, and our own validation output &mdash; so each answer comes with the numbers behind it rather than a claim you have to take on faith.</div>
+</section>
+
+
+<section class="view" id="v-stats">
+  <div class="sec" id="secDom">
+    <button class="sechead">How badly did they get beat?
+      <small>2025 &middot; play-level dominance with garbage time removed</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <label for="domSel" style="font-size:13px;">Week</label>
+        <select id="domSel"></select>
+      </div>
+      <div id="domBody"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secQB">
+    <button class="sechead">Where the quarterback throws
+      <small>2025 &middot; by field zone, against the league baseline</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="qbpick"><label for="qbSel" style="font-size:13px;">Passer</label><select id="qbSel"></select></div>
+      <div id="qbBody"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secQuad">
+    <button class="sechead">Offense against defense
+      <small>2025 &middot; opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <div class="seg" role="group">
+          <button data-q="all" aria-pressed="true">Overall</button>
+          <button data-q="pass" aria-pressed="false">Passing</button>
+          <button data-q="rush" aria-pressed="false">Rushing</button>
+        </div>
+      </div>
+      <div class="quadwrap" id="quadBody"></div>
+    </div>
+  </div>
+</section>
+
+<div class="shead"><h2>Appearance</h2></div>
+<div class="themebar">
+  <label for="teamSel" style="font-size:13px;">Team colors</label>
+  <select id="teamSel"></select>
+  <select id="modeSel">
+    <option value="auto">Match system</option>
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+  </select>
+</div>
+
+<footer>
+  Ridge model over Kalman-filtered team strength, opponent-adjusted EPA splits, quarterback rating, per-stadium home field, and personnel availability. Fourteen features, walk-forward validated on 2018&ndash;2025.
+  Backtest: 60.1% straight up, 10.28 points of margin error, Brier .2230 against the closing line's .2121.
+  Adjustments lock at kickoff and cannot be edited afterward.
+</footer>
+</div>
+
+<script>
+
+/* ============ DATA LOADING ============
+   All game data is fetched at load time from data/*.json, which the GitHub
+   Action regenerates on a schedule. Nothing about a refresh touches user picks:
+   localStorage is keyed to the origin, so stored data survives every deploy. */
+const DATA_BASE = '../data';
+const SCHEMA_EXPECTED = 1;
+
+function fatal(msg, detail){
+  document.body.innerHTML =
+    '<div style="max-width:640px;margin:80px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.6">'
+    + '<h1 style="font-size:22px;margin:0 0 12px">Could not load the data</h1>'
+    + '<p style="color:#666">' + msg + '</p>'
+    + (detail ? '<pre style="background:#f4f4f4;padding:12px;overflow-x:auto;font-size:12px">'
+        + String(detail).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</pre>' : '')
+    + '<p style="color:#666">If this persists, the scheduled refresh may have failed. '
+    + 'The previous data should still be served, so a reload often fixes it.</p></div>';
+}
+
+(async function boot(){
+let SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ;
+try{
+  const j = u => fetch(u, {cache:'no-cache'}).then(r=>{
+    if(!r.ok) throw new Error(u.split('/').pop() + ' returned ' + r.status);
+    return r.json();
+  });
+  [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ] = await Promise.all([
+    j(DATA_BASE + '/season.json'),
+    j(DATA_BASE + '/static/territory.json'),
+    j(DATA_BASE + '/static/trivia.json'),
+    j(DATA_BASE + '/static/qb.json'),
+    j(DATA_BASE + '/static/stats.json'),
+    j(DATA_BASE + '/static/scorefreq.json')
+  ]);
+}catch(err){ fatal('The data files could not be fetched.', err.message); return; }
+
+if(SJ.schema !== SCHEMA_EXPECTED){
+  // shape changed under stored picks: keep the app usable, warn rather than crash
+  console.warn('schema mismatch: expected', SCHEMA_EXPECTED, 'got', SJ.schema);
+  try{ localStorage.setItem('schemaNotice', String(SJ.schema)); }catch(e){}
+}
+
+/* ---- current week: the earliest week still holding an unplayed game ---- */
+const CUR_WEEK = (function(){
+  const un = SJ.games.filter(g => g.result === null || g.result === undefined);
+  return un.length ? Math.min(...un.map(g => g.wk)) : Math.max(...SJ.games.map(g => g.wk));
+})();
+
+/* ---- most likely final scores, simulated in the browser ---- */
+const LEAGUE_TOTAL = 44.8, SIG_T = 13.2;
+function seeded(s){ return function(){ s = (s*1664525 + 1013904223) >>> 0; return s/4294967296; }; }
+function simScores(margin, sigma, seed){
+  const rnd = seeded(seed >>> 0), n = 6000, tally = {};
+  const gauss = () => { let u=0,v=0; while(!u)u=rnd(); while(!v)v=rnd();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+  for(let i=0;i<n;i++){
+    const m = margin + gauss()*sigma, t = LEAGUE_TOTAL + gauss()*SIG_T;
+    let hp = Math.round((t+m)/2), ap = Math.round((t-m)/2);
+    if(hp<0) hp=0; if(ap<0) ap=0; if(hp===ap) continue;
+    const w = (SCOREFREQ[hp]||4e-4) * (SCOREFREQ[ap]||4e-4);
+    const k = hp+'-'+ap; tally[k] = (tally[k]||0) + w;
+  }
+  const tot = Object.values(tally).reduce((a,b)=>a+b,0) || 1;
+  return Object.entries(tally).sort((a,b)=>b[1]-a[1]).slice(0,3)
+    .map(([k,v])=>{ const [h,a]=k.split('-').map(Number);
+      return {h, a, p: Math.round(v/tot*10000)/100}; });
+}
+
+/* ---- shapes the rest of the app already expects ---- */
+const SEASON = {season:SJ.season, sigma:SJ.sigma, games:SJ.games, divisions:SJ.divisions};
+const WATCH  = {weights:SJ.weights, games:SJ.games};
+const DATA   = {
+  week: CUR_WEEK, season: SJ.season, sigma: SJ.sigma,
+  generated: SJ.generated,
+  games: SJ.games.filter(g=>g.wk===CUR_WEEK).map((g,i)=>Object.assign({}, g, {
+    pick:      g.margin>0 ? g.home : g.away,
+    conf:      Math.max(g.wp, 1-g.wp),
+    vegasPick: g.spread===null||g.spread===undefined ? null : (g.spread>0 ? g.home : g.away),
+    agree:     g.spread===null||g.spread===undefined ? true
+                 : ((g.margin>0?g.home:g.away) === (g.spread>0?g.home:g.away)),
+    spread:    g.spread===null||g.spread===undefined ? 0 : g.spread,
+    scores:    simScores(g.margin, SJ.sigma, 1000+i)
+  }))
+};
+
+
+const TEAMS = {
+ ARI:["#97233F","#000000","#FFB612"], ATL:["#A71930","#000000","#A5ACAF"],
+ BAL:["#241773","#000000","#9E7C0C"], BUF:["#00338D","#12264F","#C60C30"],
+ CAR:["#0085CA","#101820","#BFC0BF"], CHI:["#0B162A","#0B162A","#C83803"],
+ CIN:["#FB4F14","#000000","#FFFFFF"], CLE:["#311D00","#311D00","#FF3C00"],
+ DAL:["#003594","#041E42","#869397"], DEN:["#FB4F14","#002244","#002244"],
+ DET:["#0076B6","#101820","#B0B7BC"], GB:["#203731","#203731","#FFB612"],
+ HOU:["#03202F","#03202F","#A71930"], IND:["#002C5F","#002C5F","#A2AAAD"],
+ JAX:["#006778","#101820","#D7A22A"], KC:["#E31837","#101820","#FFB81C"],
+ LA:["#003594","#002244","#FFA300"], LAC:["#0080C6","#002A5E","#FFC20E"],
+ LV:["#000000","#000000","#A5ACAF"], MIA:["#008E97","#005778","#FC4C02"],
+ MIN:["#4F2683","#4F2683","#FFC62F"], NE:["#002244","#002244","#C60C30"],
+ NO:["#101820","#101820","#D3BC8D"], NYG:["#0B2265","#0B2265","#A71930"],
+ NYJ:["#125740","#101820","#FFFFFF"], PHI:["#004C54","#101820","#A5ACAF"],
+ PIT:["#101820","#101820","#FFB612"], SEA:["#002244","#002244","#69BE28"],
+ SF:["#AA0000","#3A0B0B","#B3995D"], TB:["#D50A0A","#34302B","#B1BABF"],
+ TEN:["#0C2340","#0C2340","#4B92DB"], WAS:["#5A1414","#5A1414","#FFB612"]
+};
+const SPEC = {
+  moxie:{cap:4, dead:1.5, label:"Moxie", note:"Passes the eye test. Small nudges are ignored by design."},
+  news:{cap:7, dead:0,  label:"Late news", note:"A fact the model doesn't have. No dead zone."},
+  stakes:{cap:3, dead:1.0, label:"Stakes", note:"Seeding, resting starters, nothing to play for."}
+};
+
+let db=null, saved={};
+const $ = s=>document.querySelector(s);
+const fmt = n=>(n>0?"+":"")+n.toFixed(1);
+const key = id=>"adj:"+id;
+
+/* ---- theme ---- */
+function applyTeam(t){
+  const c = TEAMS[t]||TEAMS.JAX;
+  document.documentElement.style.setProperty('--team-1',c[0]);
+  document.documentElement.style.setProperty('--team-2',c[1]);
+  document.documentElement.style.setProperty('--team-3',c[2]);
+  try{localStorage.setItem('team',t);}catch(e){}
+}
+function applyMode(m){
+  if(m==='auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',m);
+  try{localStorage.setItem('mode',m);}catch(e){}
+}
+
+
+/* ============ USER PICKS ============ */
+let picks={};
+try{const v=localStorage.getItem('picks'); if(v) picks=JSON.parse(v);}catch(e){}
+function savePicks(){ try{localStorage.setItem('picks',JSON.stringify(picks));}catch(e){} }
+
+/** model state for a game after sliders; used to seed picks and detect overrides */
+function modelState(g){
+  const a=saved[g.id]||{};
+  const {shift,sigmaMult}=resolve(a);
+  const adjM=g.margin+shift;
+  const wpH=cdf(adjM/(DATA.sigma*sigmaMult));
+  return {shift, adjM, wpH,
+          pickModel: g.margin>0?g.home:g.away,
+          pickAdj: adjM>0?g.home:g.away,
+          confAdj: Math.max(wpH,1-wpH)};
+}
+function setPick(g, team){
+  const m=modelState(g);
+  const cur=picks[g.id];
+  if(cur && cur.team===team){ delete picks[g.id]; savePicks(); return; }
+  // agreeing inherits the model's conviction; overriding starts at a slight lean,
+  // because the model's confidence belonged to the other team
+  const seed = (team===m.pickAdj) ? Math.round(m.confAdj*100) : 55;
+  picks[g.id]={team, conf: seed, ts:Date.now()};
+  savePicks();
+}
+function overrideCount(){
+  let n=0;
+  for(const id in picks){
+    const g=DATA.games.find(x=>x.id===id); if(!g) continue;
+    if(picks[id].team!==modelState(g).pickAdj) n++;
+  }
+  return n;
+}
+
+/* ---- adjustment math (mirrors adjust.py) ---- */
+function resolve(a){
+  let shift=0;
+  for(const k in SPEC){
+    let v=a[k]||0;
+    const s=SPEC[k];
+    v=Math.max(-s.cap,Math.min(s.cap,v));
+    if(Math.abs(v)<s.dead) v=0;
+    shift+=v;
+  }
+  return {shift, sigmaMult:a.no_read?1.35:1};
+}
+function cdf(x){
+  const t=1/(1+0.2316419*Math.abs(x));
+  const d=0.3989423*Math.exp(-x*x/2);
+  let p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
+  return x>0?1-p:p;
+}
+
+function render(){
+  $('#mastMeta').innerHTML =
+    `<b>16</b> games &middot; Sept 9&ndash;14<br>Agrees with the market on <b>${DATA.games.filter(g=>g.agree).length}/16</b>`;
+  $('#slateSub').textContent = "ranked by confidence";
+  const host=$('#slate'); host.innerHTML='';
+
+  DATA.games.slice().sort((a,b)=>b.conf-a.conf).forEach(g=>{
+    const a = saved[g.id]||{};
+    const {shift,sigmaMult}=resolve(a);
+    const adjM = g.margin+shift;
+    const wpH = cdf(adjM/(DATA.sigma*sigmaMult));
+    const pick = adjM>0?g.home:g.away;
+    const conf = Math.max(wpH,1-wpH);
+    const moved = Math.abs(shift)>0.001;
+
+    const el=document.createElement('div');
+    el.className='game'+(g.agree?'':' dis');
+    el.innerHTML=`
+      <button class="grow" aria-expanded="false">
+        <div>
+          <div class="matchup">
+            <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+            <span class="at">at</span>
+            <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+          </div>
+          <div class="gwhen">${g.day}${g.agree?'':' &middot; disagrees with the market'}</div>
+          ${lockBadge(g)}
+        </div>
+        <div class="pickbox">
+          <div class="pickteam">${pick}</div>
+          <div class="confnum">${(conf*100).toFixed(0)}% confident</div>
+        </div>
+      </button>
+      <div class="meter${moved?' adj':''}"><i style="width:${(conf*100).toFixed(1)}%"></i></div>
+      <div class="detail"></div>`;
+
+    const d=el.querySelector('.detail');
+    d.innerHTML=`
+      <div class="dgrid">
+        <div class="panel">
+          <h4>What drives this pick</h4>
+          <table class="kv">
+            <tr><td>Team strength gap</td><td class="${g.kal>0?'pos':'neg'}">${fmt(g.kal)}</td></tr>
+            <tr><td>Home field (${g.home})</td><td class="pos">${fmt(g.hfa)}</td></tr>
+            <tr><td>Quarterback edge</td><td class="${g.qbd>0?'pos':'neg'}">${g.qbd.toFixed(3)}</td></tr>
+            <tr><td>Road travel</td><td>${g.travel} mi</td></tr>
+            <tr><td>Division game</td><td>${g.div?'yes':'no'}</td></tr>
+            <tr><td>Model margin</td><td class="${g.margin>0?'pos':'neg'}">${fmt(g.margin)}</td></tr>
+            <tr><td>Closing line</td><td class="${g.spread>0?'pos':'neg'}">${fmt(g.spread)}</td></tr>
+          </table>
+          <div class="hint">Quarterbacks assumed: ${g.home} ${g.qbH}, ${g.away} ${g.qbA}. Both carried over from 2025.</div>
+        </div>
+        <div class="panel">
+          <h4>Most likely final scores</h4>
+          <div class="scorelist">
+            ${g.scores.map(s=>`<div class="scorechip">${s.h}&ndash;${s.a}<em>${s.p}%</em></div>`).join('')}
+          </div>
+          <div class="hint">The three most common final scores across 30,000 simulated versions of this game.</div>
+        </div>
+      </div>
+      <div class="adj">
+        <h4 class="adjhead">Your read</h4>
+        <p class="adjintro">Move these when you know something the model doesn't &mdash; a locker room that has checked out, a start you heard about, a team with a seed already locked and nothing to play for. Each slider shifts the predicted margin in points, and that flows straight into the pick and the confidence at the top of this card. The hatched zone in the middle is dead on purpose: small hunches make forecasts worse, so it takes real conviction to move anything.</p>
+        ${Object.keys(SPEC).map(k=>{
+          const s=SPEC[k]; const v=a[k]||0;
+          const deadPct = s.dead>0 ? (s.dead/s.cap)*50 : 0;
+          return `<div class="ctl" data-k="${k}">
+            <div class="ctl-top">
+              <div class="ctl-name">${s.label}<small>${s.note}</small></div>
+              <div class="ctl-val ${Math.abs(v)<s.dead?'off':''}">${v===0?'—':fmt(v)}</div>
+            </div>
+            <div class="sliderwrap">
+              ${deadPct?`<div class="dead" style="left:${50-deadPct}%;width:${deadPct*2}%"></div>`:''}
+              <input type="range" min="${-s.cap}" max="${s.cap}" step="0.5" value="${v}" aria-label="${s.label}">
+            </div>
+            <div class="ends"><span>favors ${g.away}</span><span>favors ${g.home}</span></div>
+          </div>`;
+        }).join('')}
+        <label class="toggle"><input type="checkbox" ${a.no_read?'checked':''} data-k="no_read">
+          <span>No read on this one — widen the range instead of moving the pick</span></label>
+        <div class="result" style="margin-top:11px;">
+          Model says <b>${fmt(g.margin)}</b>${moved?` &rarr; with your read <b>${fmt(adjM)}</b>`:''}
+          &middot; ${pick} at <b>${(conf*100).toFixed(0)}%</b><span class="saved"></span>
+        </div>
+      </div>
+      <div class="lockwrap">
+        <h4 class="adjhead">Lock your pick</h4>
+        <p class="adjintro">This is yours, not the model's. Take the other side if you believe it &mdash; we score your picks on their own track and keep a record of how the overrides go.</p>
+        <div class="lockrow" data-lock="${g.id}">
+          <button class="lockbtn" data-t="${g.away}" style="--c:${TEAMS[g.away][0]}">${g.away}</button>
+          <button class="lockbtn" data-t="${g.home}" style="--c:${TEAMS[g.home][0]}">${g.home}</button>
+        </div>
+        <div class="confwrap" data-conf="${g.id}"></div>
+      </div>`;
+
+    el.querySelector('.grow').addEventListener('click',()=>{
+      const open=el.classList.toggle('open');
+      el.querySelector('.grow').setAttribute('aria-expanded',open);
+    });
+    d.querySelectorAll('input[type=range]').forEach(inp=>{
+      inp.addEventListener('input',e=>{
+        const k=e.target.closest('.ctl').dataset.k;
+        saved[g.id]=Object.assign({},saved[g.id],{[k]:parseFloat(e.target.value)});
+        persist(g.id); softUpdate(el,g);
+      });
+    });
+    d.querySelector('input[type=checkbox]').addEventListener('change',e=>{
+      saved[g.id]=Object.assign({},saved[g.id],{no_read:e.target.checked});
+      persist(g.id); softUpdate(el,g);
+    });
+    d.querySelectorAll('.lockbtn').forEach(b=>{
+      b.addEventListener('click',()=>{ setPick(g,b.dataset.t); softUpdate(el,g); });
+    });
+    paintLock(el,g);
+    host.appendChild(el);
+  });
+}
+
+
+function paintLock(el,g){
+  const p=picks[g.id], m=modelState(g);
+  el.querySelectorAll('.lockbtn').forEach(b=>{
+    b.classList.toggle('on', !!p && p.team===b.dataset.t);
+  });
+  const cw=el.querySelector('.confwrap');
+  if(!cw) return;
+  if(!p){ cw.innerHTML=''; }
+  else {
+    const over = p.team!==m.pickAdj;
+    cw.innerHTML=`
+      <div class="ctl-top" style="margin-top:10px;">
+        <div class="ctl-name">How sure are you?<small>Starts at the model's number. Drag if you feel differently.</small></div>
+        <div class="ctl-val">${p.conf}%</div>
+      </div>
+      <div class="sliderwrap"><input type="range" min="50" max="95" step="1" value="${p.conf}" aria-label="Confidence"></div>
+      <div class="lockstate ${over?'over':''}">
+        ${over? `<b>Override.</b> The model has ${m.pickAdj}. You have ${p.team}.`
+              : `Agrees with the model. Locked on ${p.team}.`}
+      </div>`;
+    cw.querySelector('input').addEventListener('input',e=>{
+      picks[g.id].conf=parseInt(e.target.value,10); savePicks();
+      cw.querySelector('.ctl-val').textContent=picks[g.id].conf+'%';
+    });
+  }
+  const hd=el.querySelector('.lockbadge');
+  if(hd) hd.outerHTML=lockBadge(g);
+}
+function lockBadge(g){
+  const p=picks[g.id];
+  if(!p) return '<span class="lockbadge"></span>';
+  const over=p.team!==modelState(g).pickAdj;
+  return `<span class="lockbadge on ${over?'over':''}">${over?'override ':''}${p.team} ${p.conf}%</span>`;
+}
+
+function softUpdate(el,g){
+  const a=saved[g.id]||{};
+  const {shift,sigmaMult}=resolve(a);
+  const adjM=g.margin+shift;
+  const wpH=cdf(adjM/(DATA.sigma*sigmaMult));
+  const pick=adjM>0?g.home:g.away;
+  const conf=Math.max(wpH,1-wpH);
+  el.querySelector('.pickteam').textContent=pick;
+  el.querySelector('.confnum').textContent=(conf*100).toFixed(0)+"% confident";
+  const m=el.querySelector('.meter');
+  m.classList.toggle('adj',Math.abs(shift)>0.001);
+  m.querySelector('i').style.width=(conf*100).toFixed(1)+"%";
+  el.querySelectorAll('.ctl').forEach(c=>{
+    const k=c.dataset.k, s=SPEC[k], v=a[k]||0;
+    const vv=c.querySelector('.ctl-val');
+    vv.textContent = v===0?'—':fmt(v);
+    vv.classList.toggle('off',Math.abs(v)<s.dead);
+  });
+  el.querySelector('.result').innerHTML=
+    `Model says <b>${fmt(g.margin)}</b>${Math.abs(shift)>0.001?` &rarr; with your read <b>${fmt(adjM)}</b>`:''}
+     &middot; ${pick} at <b>${(conf*100).toFixed(0)}%</b><span class="saved">saved</span>`;
+  setTimeout(()=>{const s=el.querySelector('.saved'); if(s) s.textContent='';},1400);
+  paintLock(el,g);
+  updateOv();
+}
+
+let pending={};
+function persist(id){
+  try{localStorage.setItem(key(id),JSON.stringify(saved[id]));}catch(e){}
+  if(!db) return;
+  clearTimeout(pending[id]);
+  pending[id]=setTimeout(async()=>{
+    try{ await db.doc("adjustments/"+id).set({game:id, values:saved[id], updated:Date.now()}); }
+    catch(e){ /* keep local copy */ }
+  },500);
+}
+
+function renderTracks(rows){
+  const tb=$('#tracks');
+  if(!rows||!rows.length){ tb.innerHTML=''; return; }
+  $('#boardEmpty').style.display='none';
+  tb.innerHTML=rows.map(r=>`<tr class="${r.you?'you':''}"><td>${r.name}</td><td>${r.picks}</td><td>${r.su}</td><td>${r.brier}</td></tr>`).join('');
+}
+
+/* ---- boot ---- */
+(function(){
+  const sel=$('#teamSel');
+  Object.keys(TEAMS).sort().forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o);
+  });
+  let team='JAX', mode='auto';
+  try{ team=localStorage.getItem('team')||'JAX'; mode=localStorage.getItem('mode')||'auto'; }catch(e){}
+  sel.value=team; applyTeam(team);
+  $('#modeSel').value=mode; applyMode(mode);
+  sel.addEventListener('change',e=>{applyTeam(e.target.value);});
+  $('#modeSel').addEventListener('change',e=>applyMode(e.target.value));
+
+  DATA.games.forEach(g=>{
+    try{ const v=localStorage.getItem(key(g.id)); if(v) saved[g.id]=JSON.parse(v); }catch(e){}
+  });
+  render();
+  renderTracks(null);
+  updateOv();
+})();
+function updateOv(){
+  const n=Object.keys(picks).length, o=overrideCount();
+  const el=$('#ovCount'); if(!el) return;
+  el.textContent = n ? `${n} pick${n>1?'s':''} locked, ${o} override${o===1?'':'s'}` : 'four tracks';
+}
+
+
+
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+b.dataset.v));
+    if(b.dataset.v==='today') renderToday();
+    if(b.dataset.v==='sched') renderSched();
+    if(b.dataset.v==='stand') renderStand();
+    if(b.dataset.v==='scen'){ renderScen(); renderBracket(); }
+    if(b.dataset.v==='map') renderMap();
+    if(b.dataset.v==='surv') renderSurv();
+    if(b.dataset.v==='triv') renderTriv();
+    if(b.dataset.v==='stats') renderStats();
+  });
+});
+
+/* ---------- schedule ---------- */
+let schedMode='list';
+function t2min(t){const [h,m]=t.split(':').map(Number);return h*60+m;}
+function pretty(t){
+  let [h,m]=t.split(':').map(Number);
+  const ap=h>=12?'pm':'am'; h=h%12||12;
+  return h+':'+String(m).padStart(2,'0')+ap;
+}
+function dayLabel(d){
+  const dt=new Date(d+'T12:00:00');
+  return dt.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+}
+
+function renderSched(){
+  const wk=parseInt($('#wkSel').value,10);
+  const games=SEASON.games.filter(g=>g.wk===wk)
+    .sort((a,b)=> a.day===b.day ? t2min(a.time)-t2min(b.time) : a.day.localeCompare(b.day));
+  $('#schedBody').innerHTML = schedMode==='list' ? listView(games) : gridView(games);
+}
+
+function listView(games){
+  const days={};
+  games.forEach(g=>{ (days[g.day]=days[g.day]||[]).push(g); });
+  return Object.keys(days).sort().map(d=>{
+    const rows=days[d].map(g=>{
+      const fav = g.margin>0?g.home:g.away;
+      const by = Math.abs(g.margin).toFixed(1);
+      return `<div class="srow">
+        <div class="stime">${pretty(g.time)}</div>
+        <div class="steams">
+          <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+          <span class="at">at</span>
+          <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+          ${g.neutral?'<span class="intl">neutral site</span>':''}
+          <span class="svenue">${g.venue}</span>
+        </div>
+        <div class="sfav">${fav} by ${by}<em>${(Math.max(g.wp,1-g.wp)*100).toFixed(0)}% likely</em></div>
+      </div>`;
+    }).join('');
+    return `<div class="daygroup"><div class="dayhead">${dayLabel(d)}<span>${days[d].length} game${days[d].length>1?'s':''}</span></div>${rows}</div>`;
+  }).join('');
+}
+
+const GAME_MIN = 190; // typical kickoff-to-final window
+function gridView(games){
+  const days={};
+  games.forEach(g=>{ (days[g.day]=days[g.day]||[]).push(g); });
+  return Object.keys(days).sort().map(d=>{
+    const gs=days[d];
+    const start=Math.min(...gs.map(g=>t2min(g.time)));
+    const end=Math.max(...gs.map(g=>t2min(g.time)+GAME_MIN));
+    const lo=Math.floor(start/60)*60, hi=Math.ceil(end/60)*60;
+    const span=hi-lo;
+    const pct=m=>((m-lo)/span*100);
+    let ticks='';
+    for(let m=lo;m<=hi;m+=60){
+      let h=Math.floor(m/60)%24; const ap=h>=12?'p':'a'; h=h%12||12;
+      ticks+=`<div class="tick" style="left:${pct(m)}%">${h}${ap}</div>`;
+    }
+    const rows=gs.map(g=>{
+      const l=pct(t2min(g.time)), w=(GAME_MIN/span*100);
+      return `<div class="tvrow">
+        <div class="block" style="left:${l}%;width:${w}%;background:${TEAMS[g.away][0]}">
+          <div class="half"><b>${g.away}</b></div>
+          <div class="half" style="background:${TEAMS[g.home][0]}"><b>${g.home}</b></div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="daygroup">
+      <div class="dayhead">${dayLabel(d)}<span>${gs.length} game${gs.length>1?'s':''}</span></div>
+      <div class="gridscroll"><div class="tvgrid">
+        <div class="ruler">${ticks}</div>${rows}
+      </div></div></div>`;
+  }).join('') + `<div class="tvnote">Blocks span a typical three-hour-ten-minute window from kickoff, so overlap is approximate. Broadcast networks aren't published in our data source, so rows are ordered by kickoff rather than by channel.</div>`;
+}
+
+(function(){
+  const sel=$('#wkSel');
+  [...new Set(SEASON.games.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
+    const o=document.createElement('option'); o.value=w; o.textContent='Week '+w; sel.appendChild(o);
+  });
+  sel.value=1;
+  sel.addEventListener('change',renderSched);
+  $('#btnList').addEventListener('click',()=>{schedMode='list';$('#btnList').setAttribute('aria-pressed',true);$('#btnGrid').setAttribute('aria-pressed',false);renderSched();});
+  $('#btnGrid').addEventListener('click',()=>{schedMode='grid';$('#btnGrid').setAttribute('aria-pressed',true);$('#btnList').setAttribute('aria-pressed',false);renderSched();});
+})();
+
+/* ============ SEEDING ENGINE (port of seeding.py, validated 2020-2025) ============ */
+const DIVS = SEASON.divisions;
+const T2D={}, T2C={};
+for(const d in DIVS) DIVS[d].forEach(t=>{T2D[t]=d;T2C[t]=d.slice(0,3);});
+const ALLT = Object.keys(T2D).sort();
+const GAMES = SEASON.games;
+
+// static schedule structure (never changes with outcomes)
+const OPPS={}; ALLT.forEach(t=>OPPS[t]=[]);
+GAMES.forEach(g=>{OPPS[g.home].push(g.away);OPPS[g.away].push(g.home);});
+const OPPSET={}; ALLT.forEach(t=>OPPSET[t]=new Set(OPPS[t]));
+
+function tally(out){
+  // out[i] = 1 home win, 0 away win
+  const pts={},n={},cp={},cn={},dp={},dn={},h2h={};
+  ALLT.forEach(t=>{pts[t]=0;n[t]=0;cp[t]=0;cn[t]=0;dp[t]=0;dn[t]=0;h2h[t]={};});
+  for(let i=0;i<GAMES.length;i++){
+    const g=GAMES[i], o=out[i], h=g.home, a=g.away;
+    pts[h]+=o; pts[a]+=1-o; n[h]++; n[a]++;
+    (h2h[h][a]=h2h[h][a]||[0,0]); h2h[h][a][0]+=o; h2h[h][a][1]++;
+    (h2h[a][h]=h2h[a][h]||[0,0]); h2h[a][h][0]+=1-o; h2h[a][h][1]++;
+    if(T2C[h]===T2C[a]){cp[h]+=o;cn[h]++;cp[a]+=1-o;cn[a]++;}
+    if(T2D[h]===T2D[a]){dp[h]+=o;dn[h]++;dp[a]+=1-o;dn[a]++;}
+  }
+  return {pts,n,cp,cn,dp,dn,h2h,out};
+}
+const P=(a,b)=>b?a/b:0;
+
+function mk(S){
+  const pct=t=>P(S.pts[t],S.n[t]);
+  const h2hPct=(t,g)=>{let p=0,c=0;g.forEach(o=>{if(o!==t&&S.h2h[t][o]){p+=S.h2h[t][o][0];c+=S.h2h[t][o][1];}});return [P(p,c),c];};
+  const commonPct=(t,g)=>{
+    let common=null;
+    g.forEach(x=>{common = common===null ? new Set(OPPSET[x]) : new Set([...common].filter(y=>OPPSET[x].has(y)));});
+    g.forEach(x=>common.delete(x));
+    if(!common.size) return [0,0];
+    let p=0,c=0;
+    for(let i=0;i<GAMES.length;i++){
+      const gm=GAMES[i];
+      if(gm.home===t&&common.has(gm.away)){p+=S.out[i];c++;}
+      else if(gm.away===t&&common.has(gm.home)){p+=1-S.out[i];c++;}
+    }
+    return [P(p,c),c];
+  };
+  const sov=t=>{let num=0,den=0;OPPSET[t].forEach(o=>{if(S.h2h[t][o]){num+=S.h2h[t][o][0]*pct(o);den+=S.h2h[t][o][0];}});return P(num,den);};
+  const sos=t=>{let s=0;OPPS[t].forEach(o=>s+=pct(o));return P(s,OPPS[t].length);};
+  return {pct,h2hPct,commonPct,sov,sos,
+          divPct:t=>P(S.dp[t],S.dn[t]), confPct:t=>P(S.cp[t],S.cn[t]), S};
+}
+
+function breakTie(M,tied,wc){
+  if(tied.length<2) return tied.slice();
+  let steps;
+  if(!wc) steps=[ (t,g)=>M.h2hPct(t,g)[0], (t,g)=>M.divPct(t), (t,g)=>M.commonPct(t,g)[0],
+                  (t,g)=>M.confPct(t), (t,g)=>M.sov(t), (t,g)=>M.sos(t) ];
+  else {
+    const sweep=(t,g)=>{let w=0,l=0;g.forEach(o=>{if(o!==t&&M.S.h2h[t][o]){w+=M.S.h2h[t][o][0];l+=M.S.h2h[t][o][1]-M.S.h2h[t][o][0];}});
+      if(w&&!l) return 1; if(l&&!w) return -1; return 0;};
+    steps=[ sweep, (t,g)=>M.confPct(t), (t,g)=>{const c=M.commonPct(t,g);return c[1]>=4?c[0]:0;},
+            (t,g)=>M.sov(t), (t,g)=>M.sos(t) ];
+  }
+  let grp=tied.slice();
+  for(const st of steps){
+    const v={}; grp.forEach(t=>v[t]=st(t,grp));
+    let best=-Infinity; grp.forEach(t=>{if(v[t]>best)best=v[t];});
+    const win=grp.filter(t=>v[t]===best);
+    if(win.length<grp.length){
+      const rest=grp.filter(t=>v[t]!==best);
+      return breakTie(M,win,wc).concat(breakTie(M,rest,wc));
+    }
+  }
+  return grp.slice().sort();
+}
+function rankGroup(M,teams,wc){
+  const by=teams.slice().sort((a,b)=>M.pct(b)-M.pct(a));
+  const out=[]; let i=0;
+  while(i<by.length){
+    let j=i; while(j<by.length&&M.pct(by[j])===M.pct(by[i])) j++;
+    out.push(...breakTie(M,by.slice(i,j),wc)); i=j;
+  }
+  return out;
+}
+function seedConf(M,conf){
+  const dn=Object.keys(DIVS).filter(d=>d.startsWith(conf));
+  let winners=dn.map(d=>rankGroup(M,DIVS[d],false)[0]);
+  winners=rankGroup(M,winners,false);
+  const rest=[]; dn.forEach(d=>DIVS[d].forEach(t=>{if(!winners.includes(t))rest.push(t);}));
+  return winners.concat(rankGroup(M,rest,true).slice(0,3));
+}
+
+/* ============ SCENARIO STATE + MONTE CARLO ============ */
+let forced={};          // gameId -> 'home' | 'away'
+let simN=2000, simCache=null;
+
+function runSim(n){
+  const EFF=effForced();
+  const res={}; ALLT.forEach(t=>res[t]={pl:0,div:0,bye:0,seedSum:0,wins:0});
+  const out=new Array(GAMES.length);
+  for(let s=0;s<n;s++){
+    for(let i=0;i<GAMES.length;i++){
+      const g=GAMES[i], f=EFF[g.id];
+      out[i]= f==='home'?1 : f==='away'?0 : (Math.random()<g.wp?1:0);
+    }
+    const S=tally(out), M=mk(S);
+    ALLT.forEach(t=>res[t].wins+=S.pts[t]);
+    ['AFC','NFC'].forEach(c=>{
+      const sd=seedConf(M,c);
+      sd.forEach((t,k)=>{
+        res[t].pl++; res[t].seedSum+=k+1;
+        if(k<4) res[t].div++;
+        if(k===0) res[t].bye++;
+      });
+    });
+  }
+  ALLT.forEach(t=>{
+    const r=res[t];
+    r.plPct=r.pl/n; r.divPct=r.div/n; r.byePct=r.bye/n;
+    r.avgSeed=r.pl?r.seedSum/r.pl:null; r.avgWins=r.wins/n;
+  });
+  return res;
+}
+
+/* ============ STANDINGS VIEW ============ */
+let standMode='division';
+function renderStand(){
+  const R = simCache || (simCache=runSim(simN));
+  const host=$('#standBody');
+  const row=(t,r,rank)=>`<tr>
+      <td class="stname">${rank?`<span class="rk">${rank}</span>`:''}<span class="tag" style="background:${TEAMS[t][0]}">${t}</span></td>
+      <td>${r.avgWins.toFixed(1)}&ndash;${(17-r.avgWins).toFixed(1)}</td>
+      <td>${(r.divPct*100).toFixed(0)}%</td>
+      <td class="hi">${(r.plPct*100).toFixed(0)}%</td>
+    </tr>`;
+  const head=`<thead><tr><th>Team</th><th>Proj record</th><th>Win div</th><th>Playoffs</th></tr></thead>`;
+  let html='';
+  if(standMode==='division'){
+    for(const d of Object.keys(DIVS)){
+      const ts=DIVS[d].slice().sort((a,b)=>R[b].avgWins-R[a].avgWins);
+      html+=`<div class="stgroup"><div class="dayhead">${d}</div>
+        <table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
+    }
+  } else if(standMode==='conference'){
+    for(const c of ['AFC','NFC']){
+      const ts=ALLT.filter(t=>T2C[t]===c).sort((a,b)=>R[b].plPct-R[a].plPct||R[b].avgWins-R[a].avgWins);
+      html+=`<div class="stgroup"><div class="dayhead">${c}</div>
+        <table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
+    }
+  } else {
+    const ts=ALLT.slice().sort((a,b)=>R[b].avgWins-R[a].avgWins);
+    html=`<div class="stgroup"><table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
+  }
+  host.innerHTML=html+`<div class="tvnote">Projected from ${simN.toLocaleString()} simulated seasons using this model's per-game win probabilities, with full NFL tiebreakers. Records are averages, so they carry decimals. ${Object.keys(forced).length?`<b>${Object.keys(forced).length} game${Object.keys(forced).length>1?'s':''} forced</b> in the scenario tab.`:''}</div>`;
+}
+
+/* ============ SCENARIO VIEW ============ */
+let scenWeek=1;
+function renderScen(){
+  const R = simCache || (simCache=runSim(simN));
+  const games=GAMES.filter(g=>g.wk===scenWeek);
+  $('#scenGames').innerHTML = games.map(g=>{
+    const f=effForced()[g.id];
+    const imported = useMyPicks && !forced[g.id] && picksAsForced()[g.id];
+    return `<div class="scenrow${imported?' imported':''}" data-g="${g.id}">
+      <button class="pk ${f==='away'?'on':''}" data-w="away" style="--c:${TEAMS[g.away][0]}">${g.away}</button>
+      <button class="pk ${f==='home'?'on':''}" data-w="home" style="--c:${TEAMS[g.home][0]}">${g.home}</button>
+      <span class="scenwp">${(g.wp*100).toFixed(0)}% ${g.home}</span>
+    </div>`;
+  }).join('');
+  $('#scenGames').querySelectorAll('.pk').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const id=b.closest('.scenrow').dataset.g, w=b.dataset.w;
+      if(forced[id]===w) delete forced[id]; else forced[id]=w;
+      simCache=null; renderScen(); renderStand();
+      try{localStorage.setItem('forced',JSON.stringify(forced));}catch(e){}
+    });
+  });
+  const nMan=Object.keys(forced).length, nImp=useMyPicks?Object.keys(picksAsForced()).length:0;
+  const n=Object.keys(effForced()).length;
+  $('#scenCount').innerHTML = n
+    ? `${n} game${n>1?'s':''} locked${nImp?` (${nImp} from your slate picks)`:''} &middot; <button id="clearF" class="segbtn">Clear forced</button>`
+    : 'Tap a team to force that result. Everything else stays simulated.';
+  const cf=$('#clearF'); if(cf) cf.addEventListener('click',()=>{forced={};simCache=null;renderScen();renderStand();try{localStorage.removeItem('forced');}catch(e){}});
+
+  const seeds={};
+  ['AFC','NFC'].forEach(c=>{
+    const ts=ALLT.filter(t=>T2C[t]===c).sort((a,b)=>R[b].plPct-R[a].plPct);
+    seeds[c]=ts.slice(0,9);
+  });
+  $('#scenOdds').innerHTML=['AFC','NFC'].map(c=>`
+    <div class="stgroup"><div class="dayhead">${c} playoff picture</div>
+    <table class="tracks stand"><thead><tr><th>Team</th><th>Proj wins</th><th>Avg seed</th><th>Playoffs</th></tr></thead>
+    <tbody>${seeds[c].map((t,i)=>`<tr class="${i<7?'in':''}">
+      <td class="stname"><span class="rk">${i+1}</span><span class="tag" style="background:${TEAMS[t][0]}">${t}</span></td>
+      <td>${R[t].avgWins.toFixed(1)}</td>
+      <td>${R[t].avgSeed?R[t].avgSeed.toFixed(1):'—'}</td>
+      <td class="hi">${(R[t].plPct*100).toFixed(0)}%</td></tr>`).join('')}</tbody></table></div>`).join('');
+}
+
+(function(){
+  const ss=$('#scenSel');
+  [...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
+    const o=document.createElement('option'); o.value=w; o.textContent='Week '+w; ss.appendChild(o);
+  });
+  ss.value=1;
+  ss.addEventListener('change',e=>{scenWeek=parseInt(e.target.value,10);renderScen();});
+  document.querySelectorAll('#v-stand .seg button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      standMode=b.dataset.s;
+      document.querySelectorAll('#v-stand .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      renderStand();
+    });
+  });
+  try{const f=localStorage.getItem('forced'); if(f) forced=JSON.parse(f);}catch(e){}
+})();
+
+
+
+(function(){
+  document.querySelectorAll('#v-map .seg button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      mapSeason=b.dataset.ms;
+      document.querySelectorAll('#v-map .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      renderMap();
+    });
+  });
+  $('#mapWeek').addEventListener('input',e=>{mapWeek=parseInt(e.target.value,10);renderMap();});
+  document.querySelectorAll('#v-map .seg button[data-mm]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      mapMode=b.dataset.mm;
+      document.querySelectorAll('#v-map .seg button[data-mm]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      renderMap();
+    });
+  });
+})();
+/* ============ TERRITORY MAP ============ */
+let mapSeason='2026', mapWeek=18, mapBuilt=false, mapMode='conquest';
+
+function buildMap(){
+  if(mapBuilt) return;
+  const byOrig={};
+  for(const fips in TERR.own0){ (byOrig[TERR.own0[fips]] = byOrig[TERR.own0[fips]]||[]).push(fips); }
+  let svg='<svg viewBox="0 0 975 610" id="mapSvg" role="img" aria-label="NFL territory map of the continental United States">';
+  for(const t in byOrig){
+    svg+=`<g data-orig="${t}" fill="${TEAMS[t][0]}">`;
+    byOrig[t].forEach(f=>{ if(TERR.paths[f]) svg+=`<path d="${TERR.paths[f]}"/>`; });
+    svg+='</g>';
+  }
+  svg+=`<path d="${TERR.states}" class="stateline"/></svg>`;
+  $('#mapSvg-host').innerHTML=svg;
+  $('#mapSvg').addEventListener('click',e=>{
+    const g=e.target.closest('g[data-orig]');
+    if(!g) return;
+    const orig=g.dataset.orig, snap=currentSnap();
+    const ctrl=snap? (snap[orig]||orig) : orig;
+    $('#mapPick').innerHTML = ctrl===orig
+      ? `<span class="tag" style="background:${TEAMS[orig][0]}">${orig}</span> still holds its home territory.`
+      : `<span class="tag" style="background:${TEAMS[orig][0]}">${orig}</span> home market &rarr; now controlled by <span class="tag" style="background:${TEAMS[ctrl][0]}">${ctrl}</span>`;
+  });
+  mapBuilt=true;
+}
+
+function hist(){ return TERR.modes[mapMode]; }
+function currentSnap(){
+  if(mapSeason==='2026') return null;
+  const h=hist().find(x=>x.week===mapWeek);
+  return h? h.map : null;
+}
+const MODE_NOTE={
+  conquest:"Beat a team and you take everything they hold, including land they had taken from someone else. Lose and you forfeit all of it.",
+  home:"Beat a team and you take their home market only. Anything they had conquered elsewhere stays with them, so empires grow steadily rather than exploding.",
+  weekly:"The map resets every week. Each winner colors its own market and the loser's, and byes keep their own ground."
+};
+
+function renderMap(){
+  buildMap();
+  const snap=currentSnap();
+  document.querySelectorAll('#mapSvg g[data-orig]').forEach(g=>{
+    const o=g.dataset.orig, c=snap?(snap[o]||o):o;
+    g.setAttribute('fill', TEAMS[c][0]);
+  });
+
+  const wkWrap=$('#mapWeekWrap');
+  wkWrap.style.display = mapSeason==='2026' ? 'none' : '';
+  if(mapSeason==='2026'){
+    $('#mapCallout').innerHTML='Every team starts holding the counties nearest its stadium. Territory changes hands once Week 1 results are in.';
+    $('#modeNote').textContent=MODE_NOTE[mapMode];
+    $('#mapBoard').innerHTML=leaderboard(null);
+    $('#mapPick').textContent='Tap any region to see who holds it.';
+    return;
+  }
+  const h=hist().find(x=>x.week===mapWeek);
+  $('#mapWeekLabel').textContent='Week '+mapWeek;
+  const gains=Object.entries(h.delta).filter(d=>d[1]>0).sort((a,b)=>b[1]-a[1]);
+  const losses=Object.entries(h.delta).filter(d=>d[1]<0).sort((a,b)=>a[1]-b[1]);
+  const alive=Object.values(h.counts).filter(v=>v>0).length;
+  $('#mapCallout').innerHTML = gains.length
+    ? `<b>${gains[0][0]}</b> seized ${gains[0][1].toLocaleString()} counties from <b>${losses[0][0]}</b>.
+       ${alive} team${alive>1?'s':''} still hold${alive>1?'':'s'} ground.`
+    : `No territory changed hands. ${alive} teams still hold ground.`;
+  $('#mapBoard').innerHTML=leaderboard(h.counts);
+  $('#modeNote').textContent=MODE_NOTE[mapMode];
+  $('#mapPick').textContent='Tap any region to see who holds it.';
+}
+
+function leaderboard(counts){
+  const total=Object.keys(TERR.own0).length;
+  let rows;
+  if(!counts){
+    const base={}; for(const f in TERR.own0){base[TERR.own0[f]]=(base[TERR.own0[f]]||0)+1;}
+    rows=Object.entries(base).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  } else {
+    rows=Object.entries(counts).filter(r=>r[1]>0).sort((a,b)=>b[1]-a[1]);
+  }
+  return `<table class="tracks stand"><thead><tr><th>Team</th><th>Counties</th><th>Share</th></tr></thead><tbody>
+    ${rows.map(([t,c])=>`<tr><td class="stname"><span class="tag" style="background:${TEAMS[t][0]}">${t}</span></td>
+      <td>${c.toLocaleString()}</td><td class="hi">${(100*c/total).toFixed(1)}%</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+/* ============ SURVIVOR ============ */
+let surv = {picks:{}, dead:null};   // picks: week -> team ; dead: week eliminated
+let survWeek = 1;
+
+const WEEKS = [...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b);
+
+/** win probability for every team in a given week; absent = bye */
+function weekProbs(wk){
+  const out={};
+  GAMES.filter(g=>g.wk===wk).forEach(g=>{ out[g.home]=g.wp; out[g.away]=1-g.wp; });
+  return out;
+}
+const PROBS = {}; WEEKS.forEach(w=>PROBS[w]=weekProbs(w));
+
+/** Hungarian (Kuhn-Munkres), minimises total cost. rows <= cols. */
+function hungarian(a){
+  const n=a.length, m=a[0].length, INF=1e18;
+  const u=new Array(n+1).fill(0), v=new Array(m+1).fill(0);
+  const p=new Array(m+1).fill(0), way=new Array(m+1).fill(0);
+  for(let i=1;i<=n;i++){
+    p[0]=i; let j0=0;
+    const minv=new Array(m+1).fill(INF), used=new Array(m+1).fill(false);
+    do{
+      used[j0]=true;
+      const i0=p[j0]; let delta=INF, j1=0;
+      for(let j=1;j<=m;j++) if(!used[j]){
+        const cur=a[i0-1][j-1]-u[i0]-v[j];
+        if(cur<minv[j]){minv[j]=cur; way[j]=j0;}
+        if(minv[j]<delta){delta=minv[j]; j1=j;}
+      }
+      for(let j=0;j<=m;j++){
+        if(used[j]){u[p[j]]+=delta; v[j]-=delta;}
+        else minv[j]-=delta;
+      }
+      j0=j1;
+    } while(p[j0]!==0);
+    do{ const j1=way[j0]; p[j0]=p[j1]; j0=j1; } while(j0);
+  }
+  const ans=new Array(n).fill(-1);
+  for(let j=1;j<=m;j++) if(p[j]) ans[p[j]-1]=j-1;
+  return ans;
+}
+
+const BIG=60;   // cost for an impossible assignment (bye / already used)
+/** best assignment of teams to the given weeks, excluding `used` teams */
+function solvePath(weeks, used){
+  const pool=ALLT.filter(t=>!used.has(t));
+  if(!weeks.length || pool.length<weeks.length) return null;
+  const cost=weeks.map(w=>pool.map(t=>{
+    const p=PROBS[w][t];
+    return (p===undefined) ? BIG : -Math.log(Math.max(p,1e-9));
+  }));
+  const asg=hungarian(cost);
+  let logp=0; const plan=[];
+  weeks.forEach((w,i)=>{
+    const t=pool[asg[i]];
+    const p=PROBS[w][t];
+    if(p===undefined){ plan.push({wk:w, team:null, p:null}); logp+=-BIG; }
+    else { plan.push({wk:w, team:t, p}); logp+=Math.log(p); }
+  });
+  return {plan, surv:Math.exp(logp)};
+}
+
+function remainingWeeks(){
+  return WEEKS.filter(w=>!(w in surv.picks) && w>=survWeek);
+}
+function usedTeams(){ return new Set(Object.values(surv.picks)); }
+
+function renderSurv(){
+  const used=usedTeams();
+  const dead = surv.dead!==null;
+
+  // status
+  const n=Object.keys(surv.picks).length;
+  $('#survStatus').innerHTML = dead
+    ? `<span class="dead">Eliminated in Week ${surv.dead}.</span> ${n} pick${n>1?'s':''} made. Entry is frozen.`
+    : `Alive through ${n} pick${n===1?'':'s'}. ${32-used.size} teams still available.`;
+
+  // optimal path from this week forward
+  const rem=remainingWeeks();
+  const best=dead?null:solvePath(rem, used);
+  const bestFirst = best && best.plan.length ? best.plan[0] : null;
+
+  // this week's board
+  const wp=PROBS[survWeek]||{};
+  const picked=surv.picks[survWeek];
+  const rows=Object.keys(wp).filter(t=>!used.has(t)||t===picked)
+    .sort((a,b)=>wp[b]-wp[a])
+    .map(t=>{
+      // cost of taking t now: best achievable path if forced to use t this week
+      let delta=null;
+      if(best && rem.length>1 && rem[0]===survWeek){
+        const alt=solvePath(rem.slice(1), new Set([...used,t]));
+        if(alt) delta = (Math.log(wp[t])+Math.log(alt.surv)) - Math.log(best.surv);
+      }
+      const isBest = bestFirst && bestFirst.team===t && bestFirst.wk===survWeek;
+      const g=GAMES.find(x=>x.wk===survWeek&&(x.home===t||x.away===t));
+      const opp = g ? (g.home===t?'vs '+g.away:'at '+g.home) : '';
+      return `<div class="survrow ${picked===t?'sel':''}" data-t="${t}">
+        <button class="pk ${picked===t?'on':''}" style="--c:${TEAMS[t][0]}" ${dead||picked?'disabled':''}>${t}</button>
+        <span class="survopp">${opp}</span>
+        <span class="survp">${(wp[t]*100).toFixed(0)}%</span>
+        <span class="survcost ${delta!==null&&delta<-0.02?'warn':''}">${
+          isBest?'<b>best</b>' : delta===null?'' : (delta>=-0.005?'even':(delta*100).toFixed(0)+'%')}</span>
+      </div>`;
+    }).join('');
+  $('#survBoard').innerHTML = rows || '<div class="empty">No teams available this week.</div>';
+  $('#survBoard').querySelectorAll('.pk').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const t=b.closest('.survrow').dataset.t;
+      surv.picks[survWeek]=t; saveSurv(); renderSurv();
+    });
+  });
+
+  // recommended path
+  if(best){
+    $('#survPath').innerHTML=`
+      <div class="dayhead">Best remaining path</div>
+      <div class="pathnote">Survival odds if you follow it: <b>${(best.surv*100).toFixed(1)}%</b> over ${best.plan.length} weeks.</div>
+      <div class="pathgrid">${best.plan.map(s=>`<div class="pathcell">
+        <em>Wk ${s.wk}</em>
+        ${s.team?`<span class="tag" style="background:${TEAMS[s.team][0]}">${s.team}</span><i>${(s.p*100).toFixed(0)}%</i>`:'<span class="tag" style="background:var(--line-strong)">—</span>'}
+      </div>`).join('')}</div>`;
+  } else $('#survPath').innerHTML='';
+
+  // history
+  const hist=Object.keys(surv.picks).map(Number).sort((a,b)=>a-b);
+  $('#survHist').innerHTML = hist.length? `<div class="dayhead">Your picks</div>
+    <div class="pathgrid">${hist.map(w=>{
+      const t=surv.picks[w];
+      return `<div class="pathcell"><em>Wk ${w}</em><span class="tag" style="background:${TEAMS[t][0]}">${t}</span><i>${((PROBS[w][t]||0)*100).toFixed(0)}%</i></div>`;
+    }).join('')}</div>` : '';
+}
+
+function saveSurv(){
+  try{localStorage.setItem('survivor',JSON.stringify(surv));}catch(e){}
+  if(db){ db.doc("survivor/entry").set({data:surv, updated:Date.now()}).catch(()=>{}); }
+}
+
+(function(){
+  const s=$('#survSel');
+  WEEKS.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;s.appendChild(o);});
+  s.value=1;
+  s.addEventListener('change',e=>{survWeek=parseInt(e.target.value,10);renderSurv();});
+  $('#survReset').addEventListener('click',()=>{
+    surv={picks:{},dead:null}; saveSurv(); renderSurv();
+  });
+  try{const v=localStorage.getItem('survivor'); if(v) surv=JSON.parse(v);}catch(e){}
+})();
+
+
+/* ============ DAILY TRIVIA ============ */
+
+let trivState={hist:{},streak:0,best:0};
+
+function todayKey(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function dayIndex(){
+  // bank is pre-shuffled, so walking one per day gives no repeat until it wraps
+  const epoch=Math.floor(Date.parse(todayKey()+'T00:00:00Z')/86400000);
+  return ((epoch % TRIVIA.length) + TRIVIA.length) % TRIVIA.length;
+}
+
+function renderTriv(){
+  const key=todayKey(), q=TRIVIA[dayIndex()];
+  const prior=trivState.hist[key];
+  const opts = q.k==='tf' ? ['True','False'] : q.o;
+  const correct = q.k==='tf' ? (q.a?'True':'False') : q.a;
+
+  $('#trivCard').innerHTML=`
+    <p class="trivq">${q.q}</p>
+    <div class="trivopts">${opts.map(o=>`<button data-o="${o}">${o}</button>`).join('')}</div>
+    <div id="trivWhy"></div>`;
+
+  const reveal=(chosen)=>{
+    $('#trivCard').querySelectorAll('.trivopts button').forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.o===correct) b.classList.add('right');
+      else if(b.dataset.o===chosen) b.classList.add('wrong');
+    });
+    $('#trivWhy').innerHTML=`<div class="trivwhy"><b>${chosen===correct?'Correct.':'Not quite.'}</b> ${q.w}</div>
+      <div class="trivdone">Next question tomorrow.</div>`;
+  };
+
+  if(prior){ reveal(prior.chose); }
+  else {
+    $('#trivCard').querySelectorAll('.trivopts button').forEach(b=>{
+      b.addEventListener('click',()=>{
+        const chose=b.dataset.o, ok=chose===correct;
+        trivState.hist[key]={chose, ok};
+        // streak = consecutive prior days answered correctly, ending today
+        let s=0, d=new Date();
+        for(;;){
+          const kk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+          const h=trivState.hist[kk];
+          if(h&&h.ok){s++; d.setDate(d.getDate()-1);} else break;
+        }
+        trivState.streak=s; trivState.best=Math.max(trivState.best,s);
+        saveTriv(); reveal(chose); renderTrivStats();
+      });
+    });
+  }
+  renderTrivStats();
+}
+
+function renderTrivStats(){
+  const all=Object.values(trivState.hist);
+  const right=all.filter(x=>x.ok).length;
+  $('#trivStats').innerHTML=`
+    <div class="tsbox"><b>${right}/${all.length}</b><em>answered</em></div>
+    <div class="tsbox"><b>${all.length?Math.round(100*right/all.length):0}%</b><em>accuracy</em></div>
+    <div class="tsbox"><b>${trivState.streak}</b><em>streak &middot; best ${trivState.best}</em></div>`;
+}
+function saveTriv(){
+  try{localStorage.setItem('trivia',JSON.stringify(trivState));}catch(e){}
+  if(db) db.doc("trivia/state").set({data:trivState,updated:Date.now()}).catch(()=>{});
+}
+(function(){ try{const v=localStorage.getItem('trivia'); if(v) trivState=JSON.parse(v);}catch(e){} })();
+
+
+/* ============ STATS ============ */
+
+let domWeek=1, quadMode='all';
+
+function renderStats(){ renderDom(); renderQB(); renderQuad(); }
+
+
+function renderDom(){
+  const gs=STATS.games.filter(g=>g.wk===domWeek);
+  if(!gs.length){ $('#domBody').innerHTML='<div class="empty">No games.</div>'; return; }
+  const MAX=Math.max(0.35, ...gs.map(g=>Math.abs(g.epa_marg)));
+  const MAXS=Math.max(14, ...gs.map(g=>Math.abs(g.score_marg)));
+  const sorted=gs.slice().sort((a,b)=>Math.abs(b.epa_marg)-Math.abs(a.epa_marg));
+  $('#domBody').innerHTML =
+    `<div class="domlabels"><span>away dominant</span><span>even</span><span>home dominant</span></div>` +
+    sorted.map(g=>{
+      const frac=g.epa_marg/MAX, w=Math.abs(frac)*50, left=frac>0?50:50-w;
+      const win=g.epa_marg>0?g.home:g.away;
+      const tick=50+(g.score_marg/MAXS)*50;
+      return `<div class="dombar">
+        <div class="domteam">${g.away}</div>
+        <div class="domtrack" title="${g.away} at ${g.home}">
+          <div class="domfill" style="left:${left}%;width:${w}%;background:${TEAMS[win][0]}"></div>
+          <div class="domtick" style="left:${Math.max(0,Math.min(100,tick))}%"></div>
+        </div>
+        <div class="domteam r">${g.home}</div>
+      </div>
+      <div class="domlabels" style="margin:-4px 0 6px;">
+        <span>${g.epa_marg>0?g.home:g.away} +${Math.abs(g.epa_marg).toFixed(3)} EPA/play</span>
+        <span>${g.home} ${g.score_marg>0?'+':''}${g.score_marg} &middot; control ${(g.ctrl*100).toFixed(0)}%</span>
+      </div>`;
+    }).join('') +
+    `<div class="domlegend">The bar is opponent-adjusted EPA per play with garbage time stripped &mdash; only snaps where win probability sat between 5% and 95% count. The dark tick is the final score margin on the same scale. When the tick and the bar disagree, the scoreboard flattered somebody.</div>`;
+}
+
+function renderQuad(){
+  const key=quadMode, ok='off_'+key, dk='def_'+key;
+  const ts=Object.keys(STATS.quad);
+  const xs=ts.map(t=>STATS.quad[t][ok]), ys=ts.map(t=>STATS.quad[t][dk]);
+  const xmin=Math.min(...xs), xmax=Math.max(...xs), ymin=Math.min(...ys), ymax=Math.max(...ys);
+  const px=v=>60+((v-xmin)/(xmax-xmin||1))*300;
+  // defence: lower is better, so invert the axis (good defence sits high)
+  const py=v=>30+((v-ymin)/(ymax-ymin||1))*300;
+  const mx=px((xmin+xmax)/2), my=py((ymin+ymax)/2);
+  const pts=ts.map(t=>{
+    const x=px(STATS.quad[t][ok]), y=py(STATS.quad[t][dk]);
+    return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
+      <text x="${x.toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">${t}</text></g>`;
+  }).join('');
+  $('#quadBody').innerHTML=`
+  <svg viewBox="0 0 400 370" role="img" aria-label="Offense versus defense quadrant chart">
+    <line class="qmid" x1="${mx}" y1="20" x2="${mx}" y2="340"/>
+    <line class="qmid" x1="50" y1="${my}" x2="390" y2="${my}"/>
+    <text class="qlab" x="385" y="${my-7}" text-anchor="end">good offense, good defense</text>
+    <text class="qlab" x="385" y="${my+15}" text-anchor="end">good offense, weak defense</text>
+    <text class="qlab" x="55" y="${my-7}">good defense, weak offense</text>
+    <text class="qlab" x="55" y="${my+15}">weak at both</text>
+    ${pts}
+    <text class="axlab" x="220" y="362" text-anchor="middle">offense &rarr; better</text>
+    <text class="axlab" x="14" y="185" text-anchor="middle" transform="rotate(-90 14 185)">defense &rarr; better</text>
+  </svg>
+  <div class="domlegend">Both axes are opponent-adjusted EPA per play across 2025. The defensive axis is inverted so that up and to the right is good at both. Distance from the centre lines is how far a team sat from league average.</div>`;
+}
+
+(function(){
+  document.querySelectorAll('.sechead').forEach(b=>{
+    b.addEventListener('click',()=>b.closest('.sec').classList.toggle('closed'));
+  });
+  const s=$('#domSel');
+  [...new Set(STATS.games.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
+    const o=document.createElement('option');o.value=w;o.textContent='Week '+w;s.appendChild(o);
+  });
+  s.value=1; s.addEventListener('change',e=>{domWeek=parseInt(e.target.value,10);renderDom();});
+  document.querySelectorAll('#v-stats .seg button[data-q]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      quadMode=b.dataset.q;
+      document.querySelectorAll('#v-stats .seg button[data-q]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      renderQuad();
+    });
+  });
+})();
+
+/* ============ IMPORT SLATE PICKS ============ */
+let useMyPicks=false;
+try{ useMyPicks = localStorage.getItem('useMyPicks')==='1'; }catch(e){}
+
+/** slate picks expressed as forced outcomes */
+function picksAsForced(){
+  const out={};
+  for(const id in picks){
+    const g=GAMES.find(x=>x.id===id); if(!g) continue;
+    out[id] = (picks[id].team===g.home) ? 'home' : 'away';
+  }
+  return out;
+}
+/** what the simulator actually uses: manual forcing plus, optionally, your locked picks */
+function effForced(){
+  return useMyPicks ? Object.assign({}, forced, picksAsForced()) : forced;
+}
+
+/* ============ DETERMINISTIC "IF THE SEASON PLAYED TO FORM" SEEDING ============ */
+function formSeeds(){
+  const f=effForced();
+  const out=GAMES.map(g=>{
+    const k=f[g.id];
+    return k==='home'?1 : k==='away'?0 : (g.wp>=0.5?1:0);
+  });
+  const S=tally(out), M=mk(S);
+  return {AFC:seedConf(M,'AFC'), NFC:seedConf(M,'NFC'), rec:S};
+}
+
+/* ============ BRACKET ============ */
+let bracket={AFC:{wc:{},dv:{},cc:null},NFC:{wc:{},dv:{},cc:null},sb:null};
+try{const v=localStorage.getItem('bracket'); if(v) bracket=JSON.parse(v);}catch(e){}
+function saveBracket(){ try{localStorage.setItem('bracket',JSON.stringify(bracket));}catch(e){} }
+
+/** NFL reseeding: the top remaining seed always draws the lowest remaining seed */
+function bracketFor(conf, seeds){
+  const S={}; seeds.forEach((t,i)=>S[t]=i+1);
+  const b=bracket[conf];
+  const wcPairs=[[2,7],[3,6],[4,5]].map(([a,b2])=>[seeds[a-1],seeds[b2-1]]);
+  const wcWin=wcPairs.map((p,i)=>b.wc[i]||null);
+  let dvPairs=null, dvWin=[null,null];
+  if(wcWin.every(Boolean)){
+    const alive=[seeds[0], ...wcWin].sort((x,y)=>S[x]-S[y]);
+    dvPairs=[[alive[0],alive[3]],[alive[1],alive[2]]];
+    dvWin=[b.dv[0]||null, b.dv[1]||null];
+  }
+  let ccPair=null;
+  if(dvPairs && dvWin.every(Boolean)) ccPair=[...dvWin].sort((x,y)=>S[x]-S[y]);
+  return {S, wcPairs, wcWin, dvPairs, dvWin, ccPair, cc:b.cc};
+}
+
+function matchHTML(conf, round, idx, pair, winner, seedMap){
+  if(!pair) return `<div class="bx empty"><span class="bxslot">&mdash;</span><span class="bxslot">&mdash;</span></div>`;
+  return `<div class="bx" data-c="${conf}" data-r="${round}" data-i="${idx}">
+    ${pair.map(t=>`<button class="bxteam ${winner===t?'won':''} ${winner&&winner!==t?'out':''}"
+       data-t="${t}" style="--c:${TEAMS[t][0]}"><em>${seedMap[t]}</em>${t}</button>`).join('')}
+  </div>`;
+}
+
+function renderBracket(){
+  const sd=formSeeds();
+  const host=$('#bracketBody');
+  const cols=['AFC','NFC'].map(conf=>{
+    const B=bracketFor(conf, sd[conf]);
+    return `<div class="bcol">
+      <div class="dayhead">${conf}</div>
+      <div class="brnd"><span class="brlab">Wild Card &middot; ${sd[conf][0]} on bye</span>
+        ${B.wcPairs.map((p,i)=>matchHTML(conf,'wc',i,p,B.wcWin[i],B.S)).join('')}</div>
+      <div class="brnd"><span class="brlab">Divisional</span>
+        ${[0,1].map(i=>matchHTML(conf,'dv',i,B.dvPairs?B.dvPairs[i]:null,B.dvWin[i],B.S)).join('')}</div>
+      <div class="brnd"><span class="brlab">${conf} Championship</span>
+        ${matchHTML(conf,'cc',0,B.ccPair,B.cc,B.S)}</div>
+    </div>`;
+  }).join('');
+
+  const aC=bracket.AFC.cc, nC=bracket.NFC.cc;
+  const sbPair = (aC&&nC)?[aC,nC]:null;
+  const sbMap={}; if(sbPair){sbMap[aC]=formSeeds().AFC.indexOf(aC)+1; sbMap[nC]=formSeeds().NFC.indexOf(nC)+1;}
+  host.innerHTML=`<div class="bgrid">${cols}</div>
+    <div class="brnd sb"><span class="brlab">Super Bowl</span>
+      ${sbPair?matchHTML('SB','sb',0,sbPair,bracket.sb,sbMap)
+             :'<div class="bx empty"><span class="bxslot">&mdash;</span><span class="bxslot">&mdash;</span></div>'}
+      ${bracket.sb?`<div class="champ" style="--c:${TEAMS[bracket.sb][0]}">
+        <span class="tag" style="background:${TEAMS[bracket.sb][0]}">${bracket.sb}</span> your champion</div>`:''}
+    </div>`;
+
+  host.querySelectorAll('.bxteam').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const box=b.closest('.bx'), c=box.dataset.c, r=box.dataset.r, i=+box.dataset.i, t=b.dataset.t;
+      if(r==='sb'){ const first=bracket.sb!==t; bracket.sb = bracket.sb===t?null:t; saveBracket(); renderBracket();
+                    if(first&&bracket.sb) confetti(TEAMS[bracket.sb]); return; }
+      if(r==='wc'){ bracket[c].wc[i]= bracket[c].wc[i]===t?null:t; bracket[c].dv={}; bracket[c].cc=null; bracket.sb=null; }
+      if(r==='dv'){ bracket[c].dv[i]= bracket[c].dv[i]===t?null:t; bracket[c].cc=null; bracket.sb=null; }
+      if(r==='cc'){ bracket[c].cc = bracket[c].cc===t?null:t; bracket.sb=null; }
+      saveBracket(); renderBracket();
+    });
+  });
+}
+
+/* ============ CONFETTI ============ */
+function confetti(colors){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const host=document.createElement('div'); host.className='confetti';
+  const pal=[colors[0],colors[2],colors[0],'#ffffff',colors[2]];
+  for(let i=0;i<90;i++){
+    const p=document.createElement('i');
+    p.style.left=(Math.random()*100)+'%';
+    p.style.background=pal[i%pal.length];
+    p.style.animationDelay=(Math.random()*0.5)+'s';
+    p.style.animationDuration=(2.1+Math.random()*1.5)+'s';
+    p.style.transform='rotate('+(Math.random()*360)+'deg)';
+    p.style.width=(5+Math.random()*5)+'px';
+    p.style.height=(9+Math.random()*7)+'px';
+    host.appendChild(p);
+  }
+  document.body.appendChild(host);
+  setTimeout(()=>host.remove(),4200);
+}
+
+(function(){
+  const cb=$('#impPicks'); if(!cb) return;
+  cb.checked=useMyPicks;
+  cb.addEventListener('change',e=>{
+    useMyPicks=e.target.checked;
+    try{localStorage.setItem('useMyPicks',useMyPicks?'1':'0');}catch(err){}
+    simCache=null; renderScen(); renderBracket(); renderStand();
+  });
+})();
+
+
+/* ============ TODAY ============ */
+
+const WMAP={}; WATCH.games.forEach(g=>WMAP[g.id]=g);
+
+function nextGameDay(){
+  const now=new Date();
+  const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const days=[...new Set(WATCH.games.map(g=>g.day))].sort();
+  return days.find(d=>d>=today) || days[days.length-1];
+}
+function prettyDay(d){
+  return new Date(d+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+}
+function renderToday(){
+  const day=nextGameDay();
+  const now=new Date();
+  const todayStr=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const isToday = day===todayStr;
+  const gs=WATCH.games.filter(g=>g.day===day).sort((a,b)=>b.watch-a.watch);
+  const wk=gs.length?gs[0].wk:1;
+
+  const groups=[['must','Clear the afternoon'],['good','Worth flipping to'],['redzone','Leave it on RedZone']];
+  let body='';
+  groups.forEach(([t,label])=>{
+    const sub=gs.filter(g=>g.tier===t);
+    if(!sub.length) return;
+    body+=`<div class="tierlab">${label}</div>`;
+    body+=sub.map(g=>{
+      const p=picks[g.id];
+      const dg=DATA.games.find(x=>x.id===g.id);
+      const over = p && dg && p.team!==modelState(dg).pickAdj;
+      const model = dg ? modelState(dg).pickAdj : (g.margin>0?g.home:g.away);
+      return `<div class="watchrow">
+        <div class="wscore w-${g.tier}">${Math.round(g.watch)}<em>WATCH</em></div>
+        <div class="wmatch">
+          <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+          <span class="at">at</span>
+          <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+          <div class="wmeta">${pretty(g.time)} &middot; projected margin ${g.margin>0?'+':''}${g.margin}${g.div?' &middot; division game':''}</div>
+        </div>
+        <div class="wpick">${p?`<b>${p.team}</b>${over?'<span class="none">your override</span>':'<span class="none">'+p.conf+'% locked</span>'}`
+                             :`<b>${model}</b><span class="none">model &middot; not locked</span>`}</div>
+      </div>`;
+    }).join('');
+  });
+
+  // your picks across the whole week
+  const wkGames=WATCH.games.filter(g=>g.wk===wk);
+  const locked=wkGames.filter(g=>picks[g.id]);
+  const mp = locked.length ? `<div class="mypicks">
+      <div class="tierlab">Your week ${wk} card &middot; ${locked.length} of ${wkGames.length} locked</div>
+      <div class="mpgrid">${locked.map(g=>{
+        const p=picks[g.id], dg=DATA.games.find(x=>x.id===g.id);
+        const over=dg&&p.team!==modelState(dg).pickAdj;
+        return `<div class="mpcell ${over?'over':''}"><span class="tag" style="background:${TEAMS[p.team][0]}">${p.team}</span><i>${p.conf}%</i>${over?'<em>override</em>':''}</div>`;
+      }).join('')}</div></div>`
+    : `<div class="mypicks"><div class="tierlab">Your week ${wk} card</div>
+       <div class="empty" style="padding:14px;">Nothing locked yet. Open the Slate tab and tap a team on any game.</div></div>`;
+
+  $('#todayBody').innerHTML=`
+    <div class="todayhead">
+      <h2>${isToday?'Today':prettyDay(day)}</h2>
+      <div class="sub">${gs.length} game${gs.length===1?'':'s'} &middot; Week ${wk}${isToday?' &middot; '+prettyDay(day):''}</div>
+    </div>
+    ${body}
+    ${mp}
+    <div class="tvnote">The watch score blends how close we expect the game to be (40%), how good both teams are (30%), projected scoring (20%) and whether it's a division game (10%). Scoring sits idle until the season produces pace data, so right now it's really closeness, quality and stakes. These weights are a judgement call, not a result &mdash; they're set to favour tight games between good teams.</div>`;
+}
+renderToday();   // safe here: WATCH is initialised above
+
+
+/* ============ QB PASSING CHART ============ */
+
+let qbSel=null;
+const ZL=['left','middle','right'];
+
+function zColor(epa, baseEpa){
+  if(epa===null||epa===undefined) return 'var(--surface-2)';
+  const d=epa-baseEpa;
+  const t=Math.max(-1,Math.min(1,d/0.45));
+  if(t>=0) return `color-mix(in srgb, var(--good) ${Math.round(t*58)}%, var(--surface-2))`;
+  return `color-mix(in srgb, var(--bad) ${Math.round(-t*58)}%, var(--surface-2))`;
+}
+
+function renderQB(){
+  const q=QB.qbs[qbSel]; if(!q) return;
+  const cell=(depth,loc)=>{
+    const k=depth+'_'+loc, z=q.zones[k], b=QB.base[k];
+    if(!z || !z.n) return `<div class="zcell dim"><div class="zn">no attempts</div></div>`;
+    const dCmp=z.cmp-b.cmp;
+    return `<div class="zcell" style="background:${zColor(z.epa,b.epa)}">
+      <div class="zc">${z.cmp}%</div>
+      <div class="ze ${z.epa>b.epa?'pos2':'neg2'}">${z.epa>0?'+':''}${z.epa.toFixed(2)} EPA</div>
+      <div class="zn">${z.n} att &middot; ${z.ay} air yds</div>
+      <div class="zt">${z.td} TD &middot; ${z.int} INT</div>
+      <div class="zn">${dCmp>0?'+':''}${dCmp.toFixed(1)} vs league</div>
+    </div>`;
+  };
+  $('#qbBody').innerHTML=`
+    <div class="qbtot">
+      <div><b>${q.att}</b><em>ATTEMPTS</em></div>
+      <div><b>${q.cmp}%</b><em>COMPLETE</em></div>
+      <div><b>${q.epa>0?'+':''}${q.epa.toFixed(2)}</b><em>EPA/ATT</em></div>
+      <div><b>${q.td}</b><em>TD</em></div>
+      <div><b>${q.int}</b><em>INT</em></div>
+      ${q.cpoe!==null?`<div><b>${q.cpoe>0?'+':''}${q.cpoe}</b><em>CPOE</em></div>`:''}
+    </div>
+    <div class="zgrid">
+      <div class="zrowlab" style="margin-top:0;">Deep &mdash; 15+ air yards</div>
+      ${ZL.map(l=>cell('deep',l)).join('')}
+      <div class="zrowlab">Short</div>
+      ${ZL.map(l=>cell('short',l)).join('')}
+    </div>
+    <div class="zaim">&larr; offense's left &middot; looking downfield &middot; offense's right &rarr;</div>
+    <div class="domlegend">Colour is EPA per attempt against the league average for that same zone, so a green deep-middle cell means better than other quarterbacks throwing deep middle &mdash; not just better than his own short passes. CPOE is completion percentage over expected, which credits difficulty: a passer can complete fewer throws than average and still post a positive number if the throws were harder.</div>`;
+}
+
+(async function(){
+  try{
+    const d = await claude.use("db");
+    if(!d) return;
+    db=d;
+    const snap = await db.collection("adjustments").get();
+    let changed=false;
+    (snap.docs||[]).forEach(doc=>{
+      const v=doc.data&&doc.data.values;
+      if(v && doc.data.game){ saved[doc.data.game]=v; changed=true; }
+    });
+    if(changed) render();
+  }catch(e){}
+})();
+(function(){
+  const sel=$('#qbSel'); if(!sel) return;
+  const list=Object.entries(QB.qbs).sort((a,b)=>b[1].att-a[1].att);
+  list.forEach(([id,q])=>{const o=document.createElement('option');o.value=id;o.textContent=`${q.name} (${q.team})`;sel.appendChild(o);});
+  qbSel=list[0][0]; sel.value=qbSel;
+  sel.addEventListener('change',e=>{qbSel=e.target.value;renderQB();});
+})();
+
+})();  // end boot
+</script>
+</body>
+</html>
