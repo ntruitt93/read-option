@@ -5,6 +5,8 @@ The historical frame is built walk-forward (each game sees only prior data) and
 cached, because it only changes when new results land.
 """
 import numpy as np, pandas as pd, json, warnings
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from scipy.stats import norm
 from sklearn.linear_model import Ridge
 from .config import (CACHE, DATA, SEASON, HIST_START, LIVE_FEATURES, MODEL_ALPHA,
@@ -105,6 +107,8 @@ def fit(hist):
 def project(games, tg, hist, model, sigma, ratings, hfa, qbtl, teams):
     """Project every remaining game of SEASON."""
     up = games[(games.season==SEASON)&(games.game_type=='REG')].copy()
+    for c in ('weekday','stadium','location'):
+        if c not in up: up[c]=''
     up['t_abs']=(up.season-HIST_START)*18+up.week
     R = F.epa_ratings(tg, teams)
     last_starter = (tg.sort_values('t_abs').dropna(subset=['passer_player_id'])
@@ -115,14 +119,18 @@ def project(games, tg, hist, model, sigma, ratings, hfa, qbtl, teams):
         if h not in teams or a not in teams: continue
         neutral = getattr(r,'location','')=='Neutral'
         def qb(team):
-            if team not in last_starter.index: return -0.005,0.0
+            if team not in last_starter.index: return -0.005,0.0,'?'
             pid=last_starter.loc[team,'passer_player_id']
-            return qbtl.get(pid,(-0.005,0.0))
-        qh,eh=qb(h); qa,ea=qb(a)
+            nm=last_starter.loc[team,'passer_player_name']
+            v=qbtl.get(pid,(-0.005,0.0))
+            return v[0],v[1],nm
+        qh,eh,nh=qb(h); qa,ea,na=qb(a)
         conf=min(eh,ea)/400 if min(eh,ea)<400 else 1.0
         mm=(R['off_pass'][h]-R['def_pass'][a])-(R['off_pass'][a]-R['def_pass'][h])
         d=dict(game_id=r.game_id, week=int(r.week), home=h, away=a,
                day=str(r.gameday), time=str(r.gametime), neutral=bool(neutral),
+               kick=_kickoff(str(r.gameday), str(r.gametime)),
+               wd=str(getattr(r,'weekday','')), venue=str(getattr(r,'stadium','')),
                kal_margin=float(ratings.get(h,0)-ratings.get(a,0)),
                team_hfa=0.0 if neutral else float(hfa.get(h,1.6)),
                off_pass_diff=float(R['off_pass'][h]-R['off_pass'][a]),
@@ -132,7 +140,7 @@ def project(games, tg, hist, model, sigma, ratings, hfa, qbtl, teams):
                qb_diff_w=float((qh-qa)*conf),
                rest_diff=float(r.home_rest-r.away_rest) if pd.notna(r.home_rest) else 0.0,
                is_div=int(r.div_game) if pd.notna(r.div_game) else 0,
-               mismatch=float(mm), flag_pass_mismatch=float(mm),
+               mismatch=float(mm), flag_pass_mismatch=float(mm), qb_home=nh, qb_away=na,
                away_travel=0.0 if neutral else F.travel_miles(a,h)/1000,
                off_avail_diff=0.0, def_avail_diff=0.0,
                spread=float(r.spread_line) if pd.notna(r.spread_line) else None,
@@ -153,6 +161,27 @@ def watchability(P):
     return close
 
 
+ET = ZoneInfo('America/New_York')
+
+def _kickoff(day, time_str):
+    """Absolute kickoff instant. gameday/gametime are US Eastern; zoneinfo handles DST,
+    so a December 1pm game correctly becomes -05:00 while September is -04:00."""
+    try:
+        return datetime.fromisoformat(f"{day}T{time_str}:00").replace(tzinfo=ET).isoformat()
+    except Exception:
+        return None
+
+
+def _clean(v):
+    """NaN/NaT are not valid JSON. Convert to None so json.dump can stay strict."""
+    if v is None: return None
+    if isinstance(v,(float,np.floating)) and (np.isnan(v) or np.isinf(v)): return None
+    if isinstance(v,(np.integer,)): return int(v)
+    if isinstance(v,(np.floating,)): return float(v)
+    if isinstance(v,(np.bool_,)): return bool(v)
+    return v
+
+
 def write_json(P, sigma, ratings, meta):
     def nz(s):
         s=np.asarray(s,float); rng=(s.max()-s.min()) or 1
@@ -165,21 +194,24 @@ def write_json(P, sigma, ratings, meta):
     P=P.assign(watch=np.round(100*nz(score),1))
     P['tier']=P.watch.map(lambda v:'must' if v>=70 else ('good' if v>=45 else 'redzone'))
 
-    games=[dict(id=r.game_id, wk=int(r.week), home=r.home, away=r.away, day=r.day, time=r.time,
+    games=[{k:_clean(v) for k,v in dict(id=r.game_id, wk=int(r.week), home=r.home, away=r.away, day=r.day, time=r.time,
                 neutral=bool(r.neutral), margin=round(float(r.pred_margin),1),
                 wp=round(float(r.wp),4), spread=r.spread, watch=float(r.watch), tier=r.tier,
                 div=int(r.is_div), kal=round(float(r.kal_margin),2), hfa=round(float(r.team_hfa),2),
                 qbd=round(float(r.qb_diff_w),3), travel=round(float(r.away_travel)*1000),
-                result=r.result, hs=r.home_score, as_=r.away_score)
+                rest=round(float(r.rest_diff),1), wd=r.wd, venue=r.venue, kick=r.kick,
+                qbH=r.qb_home, qbA=r.qb_away,
+                result=r.result, hs=r.home_score, as_=r.away_score).items()}
            for r in P.itertuples()]
+    from .config import DIVISIONS
     payload=dict(schema=SCHEMA_VERSION, season=SEASON, sigma=round(sigma,2),
                  generated=meta['generated'], played=meta['played'],
-                 weights=W, games=games)
-    (DATA/"season.json").write_text(json.dumps(payload,separators=(',',':')))
+                 weights=W, divisions=DIVISIONS, games=games)
+    (DATA/"season.json").write_text(json.dumps(payload,separators=(',',':'),allow_nan=False))
 
     results={g['id']:dict(hs=g['hs'],as_=g['as_'],result=g['result'])
              for g in games if g['result'] is not None}
     (DATA/"results.json").write_text(json.dumps(
         dict(schema=SCHEMA_VERSION, generated=meta['generated'], results=results),
-        separators=(',',':')))
+        separators=(',',':'), allow_nan=False))
     return len(games), len(results)
