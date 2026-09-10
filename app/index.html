@@ -565,6 +565,30 @@ body::before{left:0;} body::after{right:0;}
 .locknote{margin-top:9px;font-size:12px;color:var(--text-3);}
 .game.locked .locknote{color:var(--bad);}
 
+
+/* ---------- results / scoring ---------- */
+.finalchip{display:inline-block;margin:5px 6px 0 0;font-family:var(--mono-num);font-size:12px;
+  background:var(--surface-2);border:1px solid var(--line-strong);border-radius:2px;padding:2px 7px;}
+.finalchip em{font-style:normal;font-weight:700;color:var(--team-1);margin-left:4px;}
+.outcome{display:inline-block;margin:5px 6px 0 0;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;padding:2px 6px;border-radius:2px;}
+.outcome.hit{background:var(--good);color:#fff;}
+.outcome.miss{background:var(--bad);color:#fff;}
+.finaltag{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--text-3);}
+.edgebox{background:var(--surface-2);border-left:3px solid var(--team-3);padding:11px 13px;
+  margin-top:12px;font-size:13.5px;line-height:1.55;}
+.muted{color:var(--text-3);font-size:12px;}
+.wkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:8px;}
+.wkcell{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:7px 4px;text-align:center;}
+.wkcell em{display:block;font-style:normal;font-size:10px;color:var(--text-3);}
+.wkcell b{display:block;font-family:"Oswald",sans-serif;font-size:16px;font-weight:600;line-height:1.15;}
+.wkcell b.ymark{color:var(--team-1);}
+.wkcell i{display:block;font-style:normal;font-size:9px;color:var(--text-3);}
+.wchip{display:inline-block;font-family:"Oswald",sans-serif;font-size:11px;font-weight:600;
+  padding:1px 5px;border-radius:2px;vertical-align:1px;}
+.blockwatch{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
+  font-family:"Oswald",sans-serif;font-size:10px;font-weight:600;padding:1px 4px;border-radius:2px;}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
 </head>
@@ -629,6 +653,8 @@ body::before{left:0;} body::after{right:0;}
     Nothing scored yet &mdash; records fill in once Week 1 results land. Four tracks will run in parallel:
     the model alone, the model with your sliders, your submitted picks, and the closing line.
   </div>
+  <div id="edgeBox"></div>
+  <div id="weekStrip"></div>
   <div class="backtest">
     <div class="bthead">How the model did in testing &mdash; 2025, never used to fit anything</div>
     <table class="tracks stand"><tbody>
@@ -1024,7 +1050,7 @@ function render(){
             <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
           </div>
           <div class="gwhen">${g.day}${g.agree?'':' &middot; disagrees with the market'}</div>
-          ${lockBadge(g)}
+          ${scoreChip(g)}${pickOutcome(g)}${lockBadge(g)}
         </div>
         <div class="pickbox">
           <div class="pickteam">${pick}</div>
@@ -1190,6 +1216,7 @@ function softUpdate(el,g){
   setTimeout(()=>{const s=el.querySelector('.saved'); if(s) s.textContent='';},1400);
   paintLock(el,g);
   updateOv();
+  renderRecord();
 }
 
 let pending={};
@@ -1226,9 +1253,8 @@ function renderTracks(rows){
   DATA.games.forEach(g=>{
     try{ const v=localStorage.getItem(key(g.id)); if(v) saved[g.id]=JSON.parse(v); }catch(e){}
   });
-  render();
-  renderTracks(null);
-  updateOv();
+  // initial paint is deferred to initialRender() at the very end of the script,
+  // because render functions reference consts declared further down (TDZ).
 })();
 function updateOv(){
   const n=Object.keys(picks).length, o=overrideCount();
@@ -1282,16 +1308,20 @@ function listView(games){
     const rows=days[d].map(g=>{
       const fav = g.margin>0?g.home:g.away;
       const by = Math.abs(g.margin).toFixed(1);
+      const done = g.result!==null && g.result!==undefined;
       return `<div class="srow">
-        <div class="stime">${pretty(g.time)}</div>
+        <div class="stime">${done?'<span class="finaltag">FINAL</span>':pretty(g.time)}</div>
         <div class="steams">
           <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
           <span class="at">at</span>
           <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+          ${g.watch!==undefined?`<span class="wchip w-${g.tier}">${Math.round(g.watch)}</span>`:''}
           ${g.neutral?'<span class="intl">neutral site</span>':''}
           <span class="svenue">${g.venue}</span>
         </div>
-        <div class="sfav">${fav} by ${by}<em>${(Math.max(g.wp,1-g.wp)*100).toFixed(0)}% likely</em></div>
+        <div class="sfav">${done
+            ? `${g.away} ${g.as_}&ndash;${g.hs} ${g.home}<em>we said ${fav}${(g.result>0)===(g.margin>0)?' &check;':' &times;'}</em>`
+            : `${fav} by ${by}<em>${(Math.max(g.wp,1-g.wp)*100).toFixed(0)}% likely</em>`}</div>
       </div>`;
     }).join('');
     return `<div class="daygroup"><div class="dayhead">${dayLabel(d)}<span>${days[d].length} game${days[d].length>1?'s':''}</span></div>${rows}</div>`;
@@ -1317,8 +1347,10 @@ function gridView(games){
     const rows=gs.map(g=>{
       const l=pct(t2min(g.time)), w=(GAME_MIN/span*100);
       return `<div class="tvrow">
-        <div class="block" style="left:${l}%;width:${w}%;background:${TEAMS[g.away][0]}">
+        <div class="block" style="left:${l}%;width:${w}%;background:${TEAMS[g.away][0]}"
+             title="watchability ${g.watch!==undefined?Math.round(g.watch):'?'}">
           <div class="half"><b>${g.away}</b></div>
+          ${g.watch!==undefined?`<span class="blockwatch w-${g.tier}">${Math.round(g.watch)}</span>`:''}
           <div class="half" style="background:${TEAMS[g.home][0]}"><b>${g.home}</b></div>
         </div>
       </div>`;
@@ -2095,6 +2127,142 @@ function confetti(colors){
 })();
 
 
+/* ============ SCORING ============
+   Four tracks scored against real results as they land:
+     model     the projection alone
+     adjusted  the projection after your sliders
+     you       your submitted picks
+     vegas     the closing line
+   Straight-up wins are the headline; Brier is what tells us whether your
+   input actually helped, since win-loss is far too noisy to detect it. */
+
+function finished(g){ return g.result !== null && g.result !== undefined; }
+function homeWon(g){ return g.result > 0; }
+
+/** win probability for the HOME team on each track, or null if unavailable */
+function trackProbs(g){
+  const m = modelState(g);
+  const out = {
+    model:    g.wp,
+    adjusted: m.wpH,
+    you:      null,
+    vegas:    (g.spread === null || g.spread === undefined)
+                ? null : cdf(g.spread / DATA.sigma)
+  };
+  const p = picks[g.id];
+  if(p) out.you = (p.team === g.home) ? p.conf/100 : 1 - p.conf/100;
+  return out;
+}
+
+function scoreSeason(){
+  const done = SEASON.games.filter(g => finished(g) && g.result !== 0);
+  const tracks = ['model','adjusted','you','vegas'];
+  const acc = {};
+  tracks.forEach(t => acc[t] = {n:0, correct:0, brier:0});
+  const weeks = {};
+  let overrides = 0, overrideHits = 0;
+
+  done.forEach(g => {
+    const dg = DATA.games.find(x => x.id === g.id) || g;   // sliders only exist for the loaded week
+    const P = trackProbs(dg);
+    const won = homeWon(g) ? 1 : 0;
+    weeks[g.wk] = weeks[g.wk] || {n:0, model:0, you:0, vegas:0, hasYou:0};
+    weeks[g.wk].n++;
+    tracks.forEach(t => {
+      const p = P[t];
+      if(p === null || p === undefined) return;
+      acc[t].n++;
+      if((p > 0.5) === (won === 1)) acc[t].correct++;
+      acc[t].brier += (p - won) ** 2;
+      if(t === 'model' && (p > 0.5) === (won === 1)) weeks[g.wk].model++;
+      if(t === 'vegas' && (p > 0.5) === (won === 1)) weeks[g.wk].vegas++;
+      if(t === 'you'){
+        weeks[g.wk].hasYou++;
+        if((p > 0.5) === (won === 1)) weeks[g.wk].you++;
+      }
+    });
+    const pk = picks[g.id];
+    if(pk && dg.margin !== undefined){
+      const modelPick = modelState(dg).pickAdj;
+      if(pk.team !== modelPick){
+        overrides++;
+        if((pk.team === g.home) === (won === 1)) overrideHits++;
+      }
+    }
+  });
+  tracks.forEach(t => { if(acc[t].n) acc[t].brier /= acc[t].n; });
+  return {acc, weeks, overrides, overrideHits, total: done.length};
+}
+
+const TRACK_LABEL = {model:'Model alone', adjusted:'Model + your read', you:'Your picks', vegas:'Closing line'};
+
+function renderRecord(){
+  const S = scoreSeason();
+  const board = $('#tracks'), empty = $('#boardEmpty');
+  if(!S.total){
+    if(empty) empty.style.display = '';
+    if(board) board.innerHTML = '';
+    const wk = $('#weekStrip'); if(wk) wk.innerHTML = '';
+    return;
+  }
+  if(empty) empty.style.display = 'none';
+
+  const order = ['you','adjusted','model','vegas'];
+  board.innerHTML = order.map(t => {
+    const a = S.acc[t];
+    if(!a.n) return `<tr><td>${TRACK_LABEL[t]}</td><td colspan="3" class="muted">no picks yet</td></tr>`;
+    const pct = 100 * a.correct / a.n;
+    return `<tr class="${t==='you'?'you':''}">
+      <td>${TRACK_LABEL[t]}</td>
+      <td>${a.correct}&ndash;${a.n - a.correct}</td>
+      <td class="hi">${pct.toFixed(1)}%</td>
+      <td>${a.brier.toFixed(4)}</td></tr>`;
+  }).join('');
+
+  // your edge, stated carefully
+  let edge = '';
+  if(S.acc.you.n && S.acc.model.n){
+    const dg = S.acc.you.correct - Math.round(S.acc.model.correct * S.acc.you.n / S.acc.model.n);
+    const db = S.acc.model.brier - S.acc.you.brier;
+    const enough = S.acc.you.n >= 60;
+    edge = `<div class="edgebox">
+      <b>Against the model:</b> ${dg>0?'+':''}${dg} game${Math.abs(dg)===1?'':'s'},
+      Brier ${db>0?'+':''}${db.toFixed(4)} ${db>0?'better':'worse'}.
+      ${S.overrides
+        ? `You overruled the model ${S.overrides} time${S.overrides===1?'':'s'} and hit ${S.overrideHits}.`
+        : 'You have not overruled the model yet.'}
+      <div class="muted" style="margin-top:5px">${enough
+        ? 'Still a small sample &mdash; a full season of overrides has a margin of error near seven points.'
+        : `Far too few games to mean anything yet (${S.acc.you.n} scored). Treat this as a running tally, not a verdict.`}</div>
+    </div>`;
+  }
+  $('#edgeBox').innerHTML = edge;
+
+  const wks = Object.keys(S.weeks).map(Number).sort((a,b)=>a-b);
+  $('#weekStrip').innerHTML = wks.length ? `<div class="tierlab">Week by week</div>
+    <div class="wkgrid">${wks.map(w=>{
+      const x=S.weeks[w];
+      return `<div class="wkcell"><em>Wk ${w}</em>
+        <b>${x.model}/${x.n}</b><i>model</i>
+        ${x.hasYou?`<b class="ymark">${x.you}/${x.hasYou}</b><i>you</i>`:''}</div>`;
+    }).join('')}</div>` : '';
+}
+
+/* ---------- final score chips, reused across surfaces ---------- */
+function scoreChip(g){
+  if(!finished(g)) return '';
+  const hw = g.result > 0, tie = g.result === 0;
+  const w = tie ? null : (hw ? g.home : g.away);
+  return `<span class="finalchip">${g.away} ${g.as_} &ndash; ${g.hs} ${g.home}`
+       + (tie ? ' <em>tie</em>' : ` <em>${w}</em>`) + `</span>`;
+}
+function pickOutcome(g){
+  const p = picks[g.id];
+  if(!p || !finished(g) || g.result === 0) return '';
+  const hit = (p.team === g.home) === (g.result > 0);
+  return `<span class="outcome ${hit?'hit':'miss'}">${hit?'you hit':'you missed'}</span>`;
+}
+
 /* ============ TODAY ============ */
 
 const WMAP={}; WATCH.games.forEach(g=>WMAP[g.id]=g);
@@ -2125,6 +2293,7 @@ function renderToday(){
     body+=sub.map(g=>{
       const p=picks[g.id];
       const dg=DATA.games.find(x=>x.id===g.id);
+      const sj=SEASON.games.find(x=>x.id===g.id);
       const over = p && dg && p.team!==modelState(dg).pickAdj;
       const model = dg ? modelState(dg).pickAdj : (g.margin>0?g.home:g.away);
       return `<div class="watchrow">
@@ -2136,7 +2305,8 @@ function renderToday(){
           <div class="wmeta">${pretty(g.time)} &middot; projected margin ${g.margin>0?'+':''}${g.margin}${g.div?' &middot; division game':''}</div>
         </div>
         <div class="wpick">${p?`<b>${p.team}</b>${over?'<span class="none">your override</span>':'<span class="none">'+p.conf+'% locked</span>'}`
-                             :`<b>${model}</b><span class="none">model &middot; not locked</span>`}</div>
+                             :`<b>${model}</b><span class="none">model &middot; not locked</span>`}
+          ${sj?scoreChip(sj):''}${sj?pickOutcome(sj):''}</div>
       </div>`;
     }).join('');
   });
@@ -2163,7 +2333,6 @@ function renderToday(){
     ${mp}
     <div class="tvnote">The watch score blends how close we expect the game to be (40%), how good both teams are (30%), projected scoring (20%) and whether it's a division game (10%). Scoring sits idle until the season produces pace data, so right now it's really closeness, quality and stakes. These weights are a judgement call, not a result &mdash; they're set to favour tight games between good teams.</div>`;
 }
-renderToday();   // safe here: WATCH is initialised above
 
 
 /* ============ QB PASSING CHART ============ */
@@ -2233,6 +2402,15 @@ function renderQB(){
   qbSel=list[0][0]; sel.value=qbSel;
   sel.addEventListener('change',e=>{qbSel=e.target.value;renderQB();});
 })();
+
+/* ---- single initial paint: every const above is initialised by this point ---- */
+function initialRender(){
+  render();
+  renderRecord();
+  updateOv();
+  renderToday();
+}
+initialRender();
 
 })();  // end boot
 </script>
