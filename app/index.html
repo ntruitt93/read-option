@@ -589,6 +589,32 @@ body::before{left:0;} body::after{right:0;}
 .blockwatch{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;
   font-family:"Oswald",sans-serif;font-size:10px;font-weight:600;padding:1px 4px;border-radius:2px;}
 
+
+/* ---------- watchability on the schedule ---------- */
+.wkbanner{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--team-3);
+  border-radius:2px;padding:12px 13px;margin-top:14px;}
+.wkbmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2);margin-bottom:11px;}
+.wkbcount{display:flex;align-items:center;gap:5px;}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
+.wkbest{display:grid;grid-template-columns:1fr;gap:8px;}
+@media(min-width:560px){.wkbest{grid-template-columns:repeat(3,1fr);}}
+.bestcard{display:flex;gap:10px;align-items:center;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:2px;padding:8px 9px;}
+.bestscore{font-family:"Oswald",sans-serif;font-size:21px;font-weight:600;line-height:1;
+  padding:7px 6px;border-radius:2px;min-width:40px;text-align:center;flex:none;}
+.bestmatch{min-width:0;}
+.bestwhen{font-size:11px;color:var(--text-3);margin-top:3px;}
+.wchip{display:inline-flex;flex-direction:column;align-items:center;line-height:1.05;
+  font-family:"Oswald",sans-serif;font-size:13px;font-weight:600;padding:2px 6px;border-radius:2px;}
+.wchip em{font-style:normal;font-size:7.5px;letter-spacing:.08em;opacity:.75;font-weight:400;}
+.srow{border-left:3px solid transparent;padding-left:7px;}
+.srow.t-must{border-left-color:var(--team-3);background:linear-gradient(90deg,var(--surface-2),transparent 55%);}
+.srow.t-good{border-left-color:var(--line-strong);}
+.srow.t-redzone{opacity:.72;}
+.block.tb-must{box-shadow:0 0 0 2px var(--team-3), inset 0 0 0 1px rgba(255,255,255,.14);z-index:3;}
+.block.tb-redzone{opacity:.55;}
+.blockwatch{font-size:11px;padding:2px 5px;box-shadow:0 1px 2px rgba(0,0,0,.3);}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
 </head>
@@ -676,6 +702,10 @@ body::before{left:0;} body::after{right:0;}
     <div class="seg" role="group">
       <button id="btnList" aria-pressed="true">List</button>
       <button id="btnGrid" aria-pressed="false">Viewing grid</button>
+    </div>
+    <div class="seg" role="group">
+      <button id="btnTime" aria-pressed="true">By time</button>
+      <button id="btnWatch" aria-pressed="false">Best first</button>
     </div>
   </div>
   <div id="schedBody"></div>
@@ -1282,7 +1312,7 @@ document.querySelectorAll('.tabs button').forEach(b=>{
 });
 
 /* ---------- schedule ---------- */
-let schedMode='list';
+let schedMode='list', schedSort='time';
 function t2min(t){const [h,m]=t.split(':').map(Number);return h*60+m;}
 function pretty(t){
   let [h,m]=t.split(':').map(Number);
@@ -1294,36 +1324,68 @@ function dayLabel(d){
   return dt.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
 }
 
+const TIER_LABEL={must:'Clear the afternoon', good:'Worth flipping to', redzone:'Leave it on RedZone'};
+
+function weekHeader(games){
+  const rank=games.slice().sort((a,b)=>b.watch-a.watch);
+  const counts={must:0,good:0,redzone:0};
+  games.forEach(g=>counts[g.tier]=(counts[g.tier]||0)+1);
+  const best=rank.slice(0,3);
+  return `<div class="wkbanner">
+    <div class="wkbmeta">
+      <span class="wkbcount"><i class="dot w-must"></i>${counts.must} must-watch</span>
+      <span class="wkbcount"><i class="dot w-good"></i>${counts.good} worth flipping to</span>
+      <span class="wkbcount"><i class="dot w-redzone"></i>${counts.redzone} RedZone</span>
+    </div>
+    <div class="wkbest">${best.map(g=>`<div class="bestcard">
+      <div class="bestscore w-${g.tier}">${Math.round(g.watch)}</div>
+      <div class="bestmatch">
+        <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+        <span class="at">at</span>
+        <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+        <div class="bestwhen">${dayLabel(g.day).split(',')[0]} ${pretty(g.time)}${g.div?' &middot; division':''}</div>
+      </div></div>`).join('')}</div>
+  </div>`;
+}
+
 function renderSched(){
   const wk=parseInt($('#wkSel').value,10);
   const games=SEASON.games.filter(g=>g.wk===wk)
     .sort((a,b)=> a.day===b.day ? t2min(a.time)-t2min(b.time) : a.day.localeCompare(b.day));
-  $('#schedBody').innerHTML = schedMode==='list' ? listView(games) : gridView(games);
+  const body = schedMode==='list' ? listView(games) : gridView(games);
+  $('#schedBody').innerHTML = weekHeader(games) + body;
+}
+
+function srow(g, showDay){
+  const fav = g.margin>0?g.home:g.away;
+  const by = Math.abs(g.margin).toFixed(1);
+  const done = g.result!==null && g.result!==undefined;
+  const when = showDay ? dayLabel(g.day).split(',')[0]+' '+pretty(g.time) : pretty(g.time);
+  return `<div class="srow t-${g.tier}">
+    <div class="stime">${done?'<span class="finaltag">FINAL</span>':when}</div>
+    <div class="steams">
+      <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+      <span class="at">at</span>
+      <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+      ${g.watch!==undefined?`<span class="wchip w-${g.tier}" title="${TIER_LABEL[g.tier]}">${Math.round(g.watch)}<em>${g.tier==='must'?'MUST':g.tier==='good'?'GOOD':'RZ'}</em></span>`:''}
+      ${g.neutral?'<span class="intl">neutral site</span>':''}
+      <span class="svenue">${g.venue}</span>
+    </div>
+    <div class="sfav">${done
+        ? `${g.away} ${g.as_}&ndash;${g.hs} ${g.home}<em>we said ${fav}${(g.result>0)===(g.margin>0)?' &check;':' &times;'}</em>`
+        : `${fav} by ${by}<em>${(Math.max(g.wp,1-g.wp)*100).toFixed(0)}% likely</em>`}</div>
+  </div>`;
 }
 
 function listView(games){
+  if(schedSort==='watch'){
+    return `<div class="daygroup"><div class="dayhead">Ranked by watchability<span>${games.length} games</span></div>`
+      + games.slice().sort((a,b)=>b.watch-a.watch).map(g=>srow(g,true)).join('') + '</div>';
+  }
   const days={};
   games.forEach(g=>{ (days[g.day]=days[g.day]||[]).push(g); });
   return Object.keys(days).sort().map(d=>{
-    const rows=days[d].map(g=>{
-      const fav = g.margin>0?g.home:g.away;
-      const by = Math.abs(g.margin).toFixed(1);
-      const done = g.result!==null && g.result!==undefined;
-      return `<div class="srow">
-        <div class="stime">${done?'<span class="finaltag">FINAL</span>':pretty(g.time)}</div>
-        <div class="steams">
-          <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
-          <span class="at">at</span>
-          <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
-          ${g.watch!==undefined?`<span class="wchip w-${g.tier}">${Math.round(g.watch)}</span>`:''}
-          ${g.neutral?'<span class="intl">neutral site</span>':''}
-          <span class="svenue">${g.venue}</span>
-        </div>
-        <div class="sfav">${done
-            ? `${g.away} ${g.as_}&ndash;${g.hs} ${g.home}<em>we said ${fav}${(g.result>0)===(g.margin>0)?' &check;':' &times;'}</em>`
-            : `${fav} by ${by}<em>${(Math.max(g.wp,1-g.wp)*100).toFixed(0)}% likely</em>`}</div>
-      </div>`;
-    }).join('');
+    const rows=days[d].map(g=>srow(g,false)).join('');
     return `<div class="daygroup"><div class="dayhead">${dayLabel(d)}<span>${days[d].length} game${days[d].length>1?'s':''}</span></div>${rows}</div>`;
   }).join('');
 }
@@ -1347,8 +1409,8 @@ function gridView(games){
     const rows=gs.map(g=>{
       const l=pct(t2min(g.time)), w=(GAME_MIN/span*100);
       return `<div class="tvrow">
-        <div class="block" style="left:${l}%;width:${w}%;background:${TEAMS[g.away][0]}"
-             title="watchability ${g.watch!==undefined?Math.round(g.watch):'?'}">
+        <div class="block tb-${g.tier}" style="left:${l}%;width:${w}%;background:${TEAMS[g.away][0]}"
+             title="${TIER_LABEL[g.tier]} &mdash; watchability ${Math.round(g.watch)}">
           <div class="half"><b>${g.away}</b></div>
           ${g.watch!==undefined?`<span class="blockwatch w-${g.tier}">${Math.round(g.watch)}</span>`:''}
           <div class="half" style="background:${TEAMS[g.home][0]}"><b>${g.home}</b></div>
@@ -1371,6 +1433,8 @@ function gridView(games){
   sel.value=1;
   sel.addEventListener('change',renderSched);
   $('#btnList').addEventListener('click',()=>{schedMode='list';$('#btnList').setAttribute('aria-pressed',true);$('#btnGrid').setAttribute('aria-pressed',false);renderSched();});
+  $('#btnTime').addEventListener('click',()=>{schedSort='time';$('#btnTime').setAttribute('aria-pressed',true);$('#btnWatch').setAttribute('aria-pressed',false);renderSched();});
+  $('#btnWatch').addEventListener('click',()=>{schedSort='watch';$('#btnWatch').setAttribute('aria-pressed',true);$('#btnTime').setAttribute('aria-pressed',false);renderSched();});
   $('#btnGrid').addEventListener('click',()=>{schedMode='grid';$('#btnGrid').setAttribute('aria-pressed',true);$('#btnList').setAttribute('aria-pressed',false);renderSched();});
 })();
 
