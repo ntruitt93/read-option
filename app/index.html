@@ -720,6 +720,10 @@ body::before{left:0;} body::after{right:0;}
       <button data-s="conference" aria-pressed="false">Conference</button>
       <button data-s="league" aria-pressed="false">League</button>
     </div>
+    <div class="seg" role="group">
+      <button data-b="current" aria-pressed="true">Current</button>
+      <button data-b="preseason" aria-pressed="false">Preseason</button>
+    </div>
   </div>
   <div id="standBody"></div>
 </section>
@@ -871,19 +875,20 @@ function fatal(msg, detail){
 }
 
 (async function boot(){
-let SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ;
+let SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON;
 try{
   const j = u => fetch(u, {cache:'no-cache'}).then(r=>{
     if(!r.ok) throw new Error(u.split('/').pop() + ' returned ' + r.status);
     return r.json();
   });
-  [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ] = await Promise.all([
+  [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON] = await Promise.all([
     j(DATA_BASE + '/season.json'),
     j(DATA_BASE + '/static/territory.json'),
     j(DATA_BASE + '/static/trivia.json'),
     j(DATA_BASE + '/static/qb.json'),
     j(DATA_BASE + '/static/stats.json'),
-    j(DATA_BASE + '/static/scorefreq.json')
+    j(DATA_BASE + '/static/scorefreq.json'),
+    j(DATA_BASE + '/static/preseason.json').catch(()=>null)   // optional
   ]);
 }catch(err){ fatal('The data files could not be fetched.', err.message); return; }
 
@@ -1565,17 +1570,50 @@ function runSim(n){
 }
 
 /* ============ STANDINGS VIEW ============ */
-let standMode='division';
+let standMode='division', standBasis='current';
+
+/** projection using the frozen preseason win probabilities instead of today's */
+function runSimPreseason(n){
+  if(!PRESEASON) return null;
+  const res={}; ALLT.forEach(t=>res[t]={pl:0,div:0,wins:0});
+  const out=new Array(GAMES.length);
+  for(let s=0;s<n;s++){
+    for(let i=0;i<GAMES.length;i++){
+      const g=GAMES[i], p=PRESEASON.wp[g.id];
+      out[i] = Math.random() < (p===undefined?g.wp:p) ? 1 : 0;
+    }
+    const S=tally(out), M=mk(S);
+    ALLT.forEach(t=>res[t].wins+=S.pts[t]);
+    ['AFC','NFC'].forEach(c=>seedConf(M,c).forEach((t,k)=>{res[t].pl++; if(k<4)res[t].div++;}));
+  }
+  ALLT.forEach(t=>{const r=res[t];r.plPct=r.pl/n;r.divPct=r.div/n;r.avgWins=r.wins/n;});
+  return res;
+}
+let preCache=null;
+
+function recOf(t){
+  const r=(SJ.records||{})[t];
+  if(!r) return {w:0,l:0,t:0,played:0};
+  return {w:r.w,l:r.l,t:r.t,played:r.w+r.l+r.t};
+}
+
 function renderStand(){
-  const R = simCache || (simCache=runSim(simN));
+  const usePre = standBasis==='preseason' && PRESEASON;
+  const R = usePre ? (preCache || (preCache=runSimPreseason(simN)))
+                   : (simCache || (simCache=runSim(simN)));
   const host=$('#standBody');
-  const row=(t,r,rank)=>`<tr>
+  const anyPlayed = ALLT.some(t=>recOf(t).played>0);
+  const row=(t,r,rank)=>{
+    const a=recOf(t);
+    return `<tr>
       <td class="stname">${rank?`<span class="rk">${rank}</span>`:''}<span class="tag" style="background:${TEAMS[t][0]}">${t}</span></td>
+      <td class="${a.played?'hi':'muted'}">${a.w}&ndash;${a.l}${a.t?'&ndash;'+a.t:''}</td>
       <td>${r.avgWins.toFixed(1)}&ndash;${(17-r.avgWins).toFixed(1)}</td>
       <td>${(r.divPct*100).toFixed(0)}%</td>
       <td class="hi">${(r.plPct*100).toFixed(0)}%</td>
     </tr>`;
-  const head=`<thead><tr><th>Team</th><th>Proj record</th><th>Win div</th><th>Playoffs</th></tr></thead>`;
+  };
+  const head=`<thead><tr><th>Team</th><th>Record</th><th>Proj record</th><th>Win div</th><th>Playoffs</th></tr></thead>`;
   let html='';
   if(standMode==='division'){
     for(const d of Object.keys(DIVS)){
@@ -1593,7 +1631,11 @@ function renderStand(){
     const ts=ALLT.slice().sort((a,b)=>R[b].avgWins-R[a].avgWins);
     html=`<div class="stgroup"><table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
   }
-  host.innerHTML=html+`<div class="tvnote">Projected from ${simN.toLocaleString()} simulated seasons using this model's per-game win probabilities, with full NFL tiebreakers. Records are averages, so they carry decimals. ${Object.keys(forced).length?`<b>${Object.keys(forced).length} game${Object.keys(forced).length>1?'s':''} forced</b> in the scenario tab.`:''}</div>`;
+  host.innerHTML=html+`<div class="tvnote">Projected from ${simN.toLocaleString()} simulated seasons with full NFL tiebreakers; projected records are averages, so they carry decimals.
+    ${usePre
+      ? `Showing the <b>preseason</b> projection, frozen ${PRESEASON.frozen.slice(0,10)} after ${PRESEASON.played_when_frozen} game${PRESEASON.played_when_frozen===1?'':'s'}. It never updates, so you can measure how the year diverged from what we expected.`
+      : `Showing the <b>current</b> projection, which folds in every result so far.`}
+    ${Object.keys(effForced()).length?`<b>${Object.keys(effForced()).length} game${Object.keys(effForced()).length>1?'s':''} forced</b> in the scenario tab.`:''}</div>`;
 }
 
 /* ============ SCENARIO VIEW ============ */
@@ -1614,7 +1656,7 @@ function renderScen(){
     b.addEventListener('click',()=>{
       const id=b.closest('.scenrow').dataset.g, w=b.dataset.w;
       if(forced[id]===w) delete forced[id]; else forced[id]=w;
-      simCache=null; renderScen(); renderStand();
+      simCache=null; preCache=null; renderScen(); renderStand();
       try{localStorage.setItem('forced',JSON.stringify(forced));}catch(e){}
     });
   });
@@ -1647,10 +1689,17 @@ function renderScen(){
   });
   ss.value=1;
   ss.addEventListener('change',e=>{scenWeek=parseInt(e.target.value,10);renderScen();});
-  document.querySelectorAll('#v-stand .seg button').forEach(b=>{
+  document.querySelectorAll('#v-stand .seg button[data-s]').forEach(b=>{
     b.addEventListener('click',()=>{
       standMode=b.dataset.s;
-      document.querySelectorAll('#v-stand .seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      document.querySelectorAll('#v-stand .seg button[data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+      renderStand();
+    });
+  });
+  document.querySelectorAll('#v-stand .seg button[data-b]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      standBasis=b.dataset.b;
+      document.querySelectorAll('#v-stand .seg button[data-b]').forEach(x=>x.setAttribute('aria-pressed',x===b));
       renderStand();
     });
   });
