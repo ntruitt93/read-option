@@ -36,7 +36,7 @@ jobs:
           restore-keys: nflverse-
 
       - name: Refresh
-        run: python refresh.py
+        run: python refresh.py --full
 
       - name: Commit updated data
         run: |
