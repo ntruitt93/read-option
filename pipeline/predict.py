@@ -182,6 +182,23 @@ def _clean(v):
     return v
 
 
+def actual_records(games_json):
+    """Real W-L-T from completed games, plus points for and against."""
+    rec = {}
+    def touch(t):
+        if t not in rec: rec[t] = dict(w=0, l=0, t=0, pf=0, pa=0)
+        return rec[t]
+    for g in games_json:
+        if g.get('result') is None: continue
+        h, a = touch(g['home']), touch(g['away'])
+        h['pf'] += g['hs'] or 0; h['pa'] += g['as_'] or 0
+        a['pf'] += g['as_'] or 0; a['pa'] += g['hs'] or 0
+        if g['result'] > 0:   h['w'] += 1; a['l'] += 1
+        elif g['result'] < 0: a['w'] += 1; h['l'] += 1
+        else:                 h['t'] += 1; a['t'] += 1
+    return rec
+
+
 def write_json(P, sigma, ratings, meta):
     def nz(s):
         s=np.asarray(s,float); rng=(s.max()-s.min()) or 1
@@ -206,8 +223,22 @@ def write_json(P, sigma, ratings, meta):
     from .config import DIVISIONS
     payload=dict(schema=SCHEMA_VERSION, season=SEASON, sigma=round(sigma,2),
                  generated=meta['generated'], played=meta['played'],
-                 weights=W, divisions=DIVISIONS, games=games)
+                 weights=W, divisions=DIVISIONS,
+                 records=actual_records(games), games=games)
     (DATA/"season.json").write_text(json.dumps(payload,separators=(',',':'),allow_nan=False))
+
+    # ---- preseason snapshot: written once, then never overwritten ----
+    snap = DATA/"static"/"preseason.json"
+    if not snap.exists():
+        snap.write_text(json.dumps(dict(
+            schema=SCHEMA_VERSION, season=SEASON, frozen=meta['generated'],
+            played_when_frozen=meta['played'],
+            wp={g['id']: g['wp'] for g in games},
+            margin={g['id']: g['margin'] for g in games}),
+            separators=(',',':'), allow_nan=False))
+        print(f"    preseason.json  frozen at {meta['played']} games played")
+    else:
+        print("    preseason.json  already frozen, left untouched")
 
     results={g['id']:dict(hs=g['hs'],as_=g['as_'],result=g['result'])
              for g in games if g['result'] is not None}
