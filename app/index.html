@@ -616,6 +616,16 @@ body::before{left:0;} body::after{right:0;}
 .block.tb-redzone{opacity:.55;}
 .blockwatch{font-size:11px;padding:2px 5px;box-shadow:0 1px 2px rgba(0,0,0,.3);}
 
+
+/* ---------- today: outcome outlines ---------- */
+.watchrow.hitrow, .watchrow.missrow, .watchrow.donerow{
+  border:2px solid transparent; border-radius:3px; padding-left:9px; padding-right:9px;
+  margin:4px 0; border-bottom-width:2px;
+}
+.watchrow.hitrow{border-color:var(--good); background:color-mix(in srgb, var(--good) 7%, transparent);}
+.watchrow.missrow{border-color:var(--bad); background:color-mix(in srgb, var(--bad) 7%, transparent);}
+.watchrow.donerow{border-color:var(--line-strong);}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 </style>
 </head>
@@ -2413,7 +2423,13 @@ function renderToday(){
       const sj=SEASON.games.find(x=>x.id===g.id);
       const over = p && dg && p.team!==modelState(dg).pickAdj;
       const model = dg ? modelState(dg).pickAdj : (g.margin>0?g.home:g.away);
-      return `<div class="watchrow">
+      let oc='';
+      if(sj && sj.result !== null && sj.result !== undefined && sj.result !== 0 && p){
+        oc = ((p.team===sj.home) === (sj.result>0)) ? ' hitrow' : ' missrow';
+      } else if(sj && sj.result !== null && sj.result !== undefined){
+        oc = ' donerow';
+      }
+      return `<div class="watchrow${oc}">
         <div class="wscore w-${g.tier}">${Math.round(g.watch)}<em>WATCH</em></div>
         <div class="wmatch">
           <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
