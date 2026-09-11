@@ -182,6 +182,57 @@ def _clean(v):
     return v
 
 
+def freeze_predictions(games, now=None):
+    """A prediction must never change after its game has kicked off.
+
+    Every refresh overwrites the stored prediction for games that have NOT yet
+    kicked off, so the store always holds the last pre-kickoff view. Once kickoff
+    passes the stored value is restored over whatever the rerun produced, so the
+    model cannot retroactively 'predict' a result it has already been trained on.
+    """
+    now = now or datetime.now(ET)
+    path = DATA / "locked.json"
+    try:
+        locked = json.loads(path.read_text())['predictions']
+    except Exception:
+        locked = {}
+
+    # one-time seed: recover pre-kickoff values from the preseason snapshot for any
+    # game that kicked off before this mechanism existed
+    snap = DATA / "static" / "preseason.json"
+    if snap.exists():
+        try:
+            pre = json.loads(snap.read_text())
+            for g in games:
+                if g['id'] not in locked and g['id'] in pre.get('margin', {}):
+                    kick = g.get('kick')
+                    if kick and datetime.fromisoformat(kick) <= now:
+                        locked[g['id']] = dict(margin=pre['margin'][g['id']],
+                                               wp=pre['wp'][g['id']], src='preseason')
+        except Exception:
+            pass
+
+    changed = 0
+    for g in games:
+        kick = g.get('kick')
+        started = bool(kick) and datetime.fromisoformat(kick) <= now
+        if started and g['id'] in locked:
+            L = locked[g['id']]
+            if abs(L['margin'] - g['margin']) > 1e-9: changed += 1
+            g['margin'], g['wp'] = L['margin'], L['wp']
+            g['locked'] = True
+        elif not started:
+            locked[g['id']] = dict(margin=g['margin'], wp=g['wp'], src='live')
+            g['locked'] = False
+        else:
+            g['locked'] = False          # kicked off, never seen pre-kickoff
+    path.write_text(json.dumps(dict(schema=SCHEMA_VERSION,
+                                    updated=now.isoformat(timespec='seconds'),
+                                    predictions=locked),
+                               separators=(',',':'), allow_nan=False))
+    return len(locked), changed
+
+
 def actual_records(games_json):
     """Real W-L-T from completed games, plus points for and against."""
     rec = {}
@@ -200,26 +251,37 @@ def actual_records(games_json):
 
 
 def write_json(P, sigma, ratings, meta):
-    def nz(s):
-        s=np.asarray(s,float); rng=(s.max()-s.min()) or 1
-        return (s-s.min())/rng
-    close = np.clip(1-P.pred_margin.abs().values/14.0,0,1)
-    qual  = nz([ratings.get(h,0)+ratings.get(a,0) for h,a in zip(P.home,P.away)])
-    stake = P.is_div.values
-    W=WATCH_WEIGHTS
-    score = W['closeness']*close + W['quality']*qual + W['scoring']*0.5 + W['stakes']*stake
-    P=P.assign(watch=np.round(100*nz(score),1))
-    P['tier']=P.watch.map(lambda v:'must' if v>=70 else ('good' if v>=45 else 'redzone'))
-
-    games=[{k:_clean(v) for k,v in dict(id=r.game_id, wk=int(r.week), home=r.home, away=r.away, day=r.day, time=r.time,
-                neutral=bool(r.neutral), margin=round(float(r.pred_margin),1),
-                wp=round(float(r.wp),4), spread=r.spread, watch=float(r.watch), tier=r.tier,
+    # 1. build the game records straight from the projection
+    games=[{k:_clean(v) for k,v in dict(id=r.game_id, wk=int(r.week), home=r.home, away=r.away,
+                day=r.day, time=r.time, neutral=bool(r.neutral),
+                margin=round(float(r.pred_margin),1), wp=round(float(r.wp),4), spread=r.spread,
                 div=int(r.is_div), kal=round(float(r.kal_margin),2), hfa=round(float(r.team_hfa),2),
                 qbd=round(float(r.qb_diff_w),3), travel=round(float(r.away_travel)*1000),
                 rest=round(float(r.rest_diff),1), wd=r.wd, venue=r.venue, kick=r.kick,
                 qbH=r.qb_home, qbA=r.qb_away,
                 result=r.result, hs=r.home_score, as_=r.away_score).items()}
            for r in P.itertuples()]
+
+    # 2. restore pre-kickoff predictions before anything is derived from them
+    n_lock, n_rev = freeze_predictions(games)
+    print(f"    locked.json  {n_lock} predictions frozen"
+          + (f", {n_rev} rerun value(s) reverted to their pre-kickoff view" if n_rev else ""))
+
+    # 3. watchability follows the frozen margins, not the reruns
+    def nz(s):
+        s=np.asarray(s,float); rng=(s.max()-s.min()) or 1
+        return (s-s.min())/rng
+    margins = np.array([g['margin'] for g in games], dtype=float)
+    close = np.clip(1-np.abs(margins)/14.0,0,1)
+    qual  = nz([ratings.get(g['home'],0)+ratings.get(g['away'],0) for g in games])
+    stake = np.array([g['div'] for g in games], dtype=float)
+    W=WATCH_WEIGHTS
+    score = W['closeness']*close + W['quality']*qual + W['scoring']*0.5 + W['stakes']*stake
+    watch = np.round(100*nz(score),1)
+    for g,w in zip(games, watch):
+        g['watch']=float(w)
+        g['tier']='must' if w>=70 else ('good' if w>=45 else 'redzone')
+
     from .config import DIVISIONS
     payload=dict(schema=SCHEMA_VERSION, season=SEASON, sigma=round(sigma,2),
                  generated=meta['generated'], played=meta['played'],
