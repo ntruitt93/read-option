@@ -1120,7 +1120,9 @@ function render(){
             <tr><td>Model margin</td><td class="${g.margin>0?'pos':'neg'}">${fmt(g.margin)}</td></tr>
             <tr><td>Closing line</td><td class="${g.spread>0?'pos':'neg'}">${fmt(g.spread)}</td></tr>
           </table>
-          <div class="hint">Quarterbacks assumed: ${g.home} ${g.qbH}, ${g.away} ${g.qbA}. Both carried over from 2025.</div>
+          <div class="hint">${g.locked
+            ? 'This projection is frozen as it stood before kickoff. Later refreshes update the model but never rewrite a prediction for a game already played.'
+            : `Quarterbacks assumed: ${g.home} ${g.qbH}, ${g.away} ${g.qbA}.`}</div>
         </div>
         <div class="panel">
           <h4>Most likely final scores</h4>
