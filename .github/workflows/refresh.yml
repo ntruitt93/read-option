@@ -2,11 +2,17 @@ name: Refresh data
 
 on:
   schedule:
-    - cron: '0 11 * * 2'
-    - cron: '0 11 * * 4'
-    - cron: '0 11 * * 6'
-    - cron: '0 12 * * 0'
-    - cron: '0 6 * * 1'
+    # All times UTC. Eastern is UTC-4 in season, UTC-5 after early November.
+    # Daily 12:00 UTC (~8am ET) catches Thursday-night and Monday-night results.
+    - cron: '0 12 * * *'
+    # Sunday slate. Kickoffs are 1:00pm, 4:25pm and 8:20pm ET; a game takes
+    # about 3h10m, so these land after each window closes:
+    #   21:00 UTC = 5pm ET  after the 1pm games
+    #   01:00 UTC = 9pm ET  after the 4:25pm games
+    #   05:00 UTC = 1am ET  after the night game
+    - cron: '0 21 * * 0'
+    - cron: '0 1 * * 1'
+    - cron: '0 5 * * 1'
   workflow_dispatch:
 
 concurrency:
@@ -46,6 +52,4 @@ jobs:
           if git diff --staged --quiet; then
             echo "no data changes"
           else
-            git commit -m "data refresh"
-            git push
-          fi
+            git commit -m "data
