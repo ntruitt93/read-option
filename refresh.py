@@ -14,8 +14,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 import pandas as pd
 
-from pipeline.config import CACHE, DATA, SEASON, HIST_START, ALIAS, STADIUM
+from pipeline.config import CACHE, DATA, SEASON, HIST_START, ALIAS, STADIUM, STATS_SEASONS
 from pipeline import fetch, features as F, predict as P
+from pipeline import stats as S, qbchart as Q
 
 FULL  = '--full'  in sys.argv
 CHECK = '--check' in sys.argv
@@ -26,11 +27,11 @@ def main():
     print(f"refresh  {started.isoformat(timespec='seconds')}  season={SEASON}"
           f"{'  [FULL]' if FULL else ''}{'  [CHECK ONLY]' if CHECK else ''}")
 
-    print("\n[1/5] fetching")
+    print("\n[1/6] fetching")
     info = fetch.all_data()
     games = info['games']
 
-    print("\n[2/5] team-game features")
+    print("\n[2/6] team-game features")
     tg = F.team_games(range(HIST_START, SEASON+1))
     print(f"    {len(tg):,} team-games")
     pers = F.personnel(range(HIST_START, SEASON+1))
@@ -38,10 +39,10 @@ def main():
 
     hist_path = CACHE/"history.parquet"
     if FULL or not hist_path.exists():
-        print("\n[3/5] building walk-forward history (slow)")
+        print("\n[3/6] building walk-forward history (slow)")
         hist, ratings, hfa, qbtl, teams = P.build_history(games, tg, pers)
     else:
-        print("\n[3/5] reusing cached history; refreshing ratings")
+        print("\n[3/6] reusing cached history; refreshing ratings")
         hist = pd.read_parquet(hist_path)
         g = games[(games.game_type=='REG') & games.result.notna() &
                   games.season.between(HIST_START, SEASON)].copy()
@@ -53,10 +54,14 @@ def main():
         qbtl = F.qb_timeline(tg)
     print(f"    history {len(hist):,} games | {len(teams)} teams")
 
-    print("\n[4/5] fitting and projecting")
+    print("\n[4/6] fitting and projecting")
     model, sigma = P.fit(hist)
     proj = P.project(games, tg, hist, model, sigma, ratings, hfa, qbtl, teams)
     print(f"    sigma {sigma:.2f} | projected {len(proj)} games")
+
+    print("\n[5/6] season stats")
+    stats_payload = S.build(STATS_SEASONS, games, tg)
+    qb_payload    = Q.build(STATS_SEASONS)
 
     # --- validation gate: refuse to publish nonsense ---
     problems=[]
@@ -69,9 +74,9 @@ def main():
     print("    validation passed")
 
     if CHECK:
-        print("\n[5/5] --check: nothing written"); return 0
+        print("\n[6/6] --check: nothing written"); return 0
 
-    print("\n[5/5] writing data")
+    print("\n[6/6] writing data")
     meta=dict(generated=started.isoformat(timespec='seconds'), played=info['played'])
     n_games, n_res = P.write_json(proj, sigma, ratings, meta)
     (DATA/"meta.json").write_text(json.dumps(dict(
@@ -79,6 +84,9 @@ def main():
         played=info['played'], results=n_res, sigma=round(sigma,2)), indent=1))
     print(f"    season.json  {n_games} games")
     print(f"    results.json {n_res} final scores")
+    for payload, mod, label in ((stats_payload, S, 'stats.json'), (qb_payload, Q, 'qb.json')):
+        _, size = mod.write(payload)
+        print(f"    {label:12s} {'/'.join(sorted(payload['seasons']))}  {size/1024:.1f} KB")
     print(f"\ndone in {(datetime.now(timezone.utc)-started).total_seconds():.0f}s")
     return 0
 
