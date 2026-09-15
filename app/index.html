@@ -308,6 +308,15 @@ table.stand tr.in td{background:var(--surface-2);}
 .pathcell i{display:block;font-style:normal;font-family:var(--mono-num);font-size:11px;color:var(--text-2);margin-top:4px;}
 .pathnote{font-size:13px;color:var(--text-2);margin-top:6px;}
 .survstatus{background:var(--surface-2);border-left:3px solid var(--team-1);padding:10px 12px;font-size:13.5px;margin:10px 0;}
+.pk:disabled{opacity:.40;cursor:default;}
+.survrow.locked .survopp::after{content:' \00b7 locked';color:var(--text-3);}
+.pathcell.won{border-color:var(--good);}
+.pathcell.lost{border-color:var(--bad);}
+.pathcell u{display:block;text-decoration:none;font-size:10.5px;margin-top:3px;font-weight:700;}
+.pathcell.won u{color:var(--good);}
+.pathcell.lost u{color:var(--bad);}
+.secbody .orient{margin-top:0;}
+.secbody .notice{margin-bottom:0;}
 .survstatus .dead{color:var(--bad);font-weight:700;}
 
 
@@ -640,7 +649,7 @@ body::before{left:0;} body::after{right:0;}
 </header>
 
 <nav class="tabs" role="tablist">
-  <button role="tab" aria-selected="true" data-v="today">Today</button>
+  <button role="tab" aria-selected="true" data-v="today">Up Next</button>
   <button role="tab" aria-selected="false" data-v="slate">Slate</button>
   <button role="tab" aria-selected="false" data-v="sched">Schedule</button>
   <button role="tab" aria-selected="false" data-v="stand">Standings</button>
@@ -657,9 +666,14 @@ body::before{left:0;} body::after{right:0;}
 
 <section class="view" id="v-slate">
 
+<div class="sec closed" id="secIntro">
+  <button class="sechead">How this works
+    <small>what the model is, how to use it, and what it can&rsquo;t see this week</small><span class="chev">&#9660;</span></button>
+  <div class="secbody">
+
 <div class="orient">
   <p><b>What this is.</b> A prediction model for the 2026 season, plus the tools to argue with it. It rates every team from play-by-play data, projects each game, and keeps score of how it does &mdash; against the closing line, against simple baselines, and against you.</p>
-  <p><b>How to use it.</b> <b>Today</b> is the Sunday-morning view: what's on, what's worth watching, where your picks stand. <b>Slate</b> is where you dig into a game, nudge the model with what it can't see, and lock a pick. The rest &mdash; schedule, standings, playoff scenarios, a territory map, a survivor solver, daily trivia and season stats &mdash; are there when you want them.</p>
+  <p><b>How to use it.</b> <b>Up Next</b> is the matchday view: what's on next, what's worth watching, where your picks stand. <b>Slate</b> is where you dig into a game, nudge the model with what it can't see, and lock a pick. The rest &mdash; schedule, standings, playoff scenarios, a territory map, a survivor solver, daily trivia and season stats &mdash; are there when you want them.</p>
 </div>
 
 <div class="notice">
@@ -669,6 +683,9 @@ body::before{left:0;} body::after{right:0;}
     <li>Injury reports don't exist until games are played. Availability is zeroed for all 16 games.</li>
     <li>Treat large disagreements with the market as the model missing personnel news, not as an edge.</li>
   </ul>
+</div>
+
+  </div>
 </div>
 
 <div class="shead">
@@ -797,7 +814,7 @@ body::before{left:0;} body::after{right:0;}
   <div id="survBoard"></div>
   <div id="survPath"></div>
   <div id="survHist"></div>
-  <div class="tvnote">One team per week, never twice, and a loss ends your entry. The best remaining path is solved exactly &mdash; assigning teams to weeks to maximise the product of win probabilities, which is a linear assignment problem, not a week-by-week greedy choice. The percentage beside each team is what taking it now costs your remaining path; picking the strongest available team is often not optimal because it spends that team when a later week needs it more.</div>
+  <div class="tvnote">One team per week, never twice, and a loss ends your entry &mdash; a tie counts as a loss, as it does in most pools. A pick locks when its own game kicks off; before that you can switch teams or tap your pick again to clear it. Resetting the entry clears only the weeks that have not kicked off. The best remaining path is solved exactly &mdash; assigning teams to weeks to maximise the product of win probabilities, which is a linear assignment problem, not a week-by-week greedy choice. The percentage beside each team is what taking it now costs your remaining path; picking the strongest available team is often not optimal because it spends that team when a later week needs it more.</div>
 </section>
 
 
@@ -1451,7 +1468,7 @@ function gridView(games){
   [...new Set(SEASON.games.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
     const o=document.createElement('option'); o.value=w; o.textContent='Week '+w; sel.appendChild(o);
   });
-  sel.value=1;
+  sel.value=CUR_WEEK;
   sel.addEventListener('change',renderSched);
   $('#btnList').addEventListener('click',()=>{schedMode='list';$('#btnList').setAttribute('aria-pressed',true);$('#btnGrid').setAttribute('aria-pressed',false);renderSched();});
   $('#btnTime').addEventListener('click',()=>{schedSort='time';$('#btnTime').setAttribute('aria-pressed',true);$('#btnWatch').setAttribute('aria-pressed',false);renderSched();});
@@ -1699,7 +1716,7 @@ function renderScen(){
   [...new Set(GAMES.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
     const o=document.createElement('option'); o.value=w; o.textContent='Week '+w; ss.appendChild(o);
   });
-  ss.value=1;
+  ss.value=CUR_WEEK; scenWeek=CUR_WEEK;
   ss.addEventListener('change',e=>{scenWeek=parseInt(e.target.value,10);renderScen();});
   document.querySelectorAll('#v-stand .seg button[data-s]').forEach(b=>{
     b.addEventListener('click',()=>{
@@ -1886,19 +1903,52 @@ function solvePath(weeks, used){
 }
 
 function remainingWeeks(){
-  return WEEKS.filter(w=>!(w in surv.picks) && w>=survWeek);
+  return WEEKS.filter(w=>!(w in surv.picks) && w>=survWeek && w>=CUR_WEEK);
 }
 function usedTeams(){ return new Set(Object.values(surv.picks)); }
 
+/* ---- survivor locking + elimination ----
+   Picks lock at their own game's kickoff, the same rule the Slate tab uses.
+   Elimination is derived from results on every render rather than stored, so it
+   stays correct as scores land and can never drift out of sync with the season. */
+function survGame(wk, team){
+  return GAMES.find(g=>g.wk===wk && (g.home===team || g.away===team));
+}
+function survLocked(wk, team){
+  const g=survGame(wk,team);
+  return g ? started(g) : false;
+}
+function pickLocked(wk){
+  const t=surv.picks[wk];
+  return t ? survLocked(wk,t) : false;
+}
+/** result of a pick: true won, false lost (a tie counts as a loss), null undecided */
+function pickResult(wk){
+  const t=surv.picks[wk]; if(!t) return null;
+  const g=survGame(wk,t);
+  if(!g || g.result===null || g.result===undefined) return null;
+  if(g.result===0) return false;
+  return (g.home===t) ? g.result>0 : g.result<0;
+}
+/** first week whose pick lost — the week the entry died, or null if alive */
+function evalDead(picks){
+  const ws=Object.keys(picks).map(Number).sort((a,b)=>a-b);
+  for(const w of ws){ if(pickResult(w)===false) return w; }
+  return null;
+}
+
 function renderSurv(){
   const used=usedTeams();
+  surv.dead = evalDead(surv.picks);          // derived from results, never stored stale
   const dead = surv.dead!==null;
 
   // status
   const n=Object.keys(surv.picks).length;
+  const nLocked=Object.keys(surv.picks).filter(w=>pickLocked(+w)).length;
   $('#survStatus').innerHTML = dead
     ? `<span class="dead">Eliminated in Week ${surv.dead}.</span> ${n} pick${n>1?'s':''} made. Entry is frozen.`
-    : `Alive through ${n} pick${n===1?'':'s'}. ${32-used.size} teams still available.`;
+    : `Alive through ${n} pick${n===1?'':'s'}. ${32-used.size} teams still available.`
+      + (nLocked?` ${nLocked} pick${nLocked===1?'':'s'} locked at kickoff.`:'');
 
   // optimal path from this week forward
   const rem=remainingWeeks();
@@ -1920,8 +1970,12 @@ function renderSurv(){
       const isBest = bestFirst && bestFirst.team===t && bestFirst.wk===survWeek;
       const g=GAMES.find(x=>x.wk===survWeek&&(x.home===t||x.away===t));
       const opp = g ? (g.home===t?'vs '+g.away:'at '+g.home) : '';
-      return `<div class="survrow ${picked===t?'sel':''}" data-t="${t}">
-        <button class="pk ${picked===t?'on':''}" style="--c:${TEAMS[t][0]}" ${dead||picked?'disabled':''}>${t}</button>
+      // a pick locks at its own kickoff; before that it can be switched or cleared
+      const tLocked = survLocked(survWeek,t);
+      const wkLocked = pickLocked(survWeek);
+      const disabled = dead || wkLocked || tLocked;
+      return `<div class="survrow ${picked===t?'sel':''} ${tLocked?'locked':''}" data-t="${t}">
+        <button class="pk ${picked===t?'on':''}" style="--c:${TEAMS[t][0]}" ${disabled?'disabled':''}>${t}</button>
         <span class="survopp">${opp}</span>
         <span class="survp">${(wp[t]*100).toFixed(0)}%</span>
         <span class="survcost ${delta!==null&&delta<-0.02?'warn':''}">${
@@ -1932,7 +1986,12 @@ function renderSurv(){
   $('#survBoard').querySelectorAll('.pk').forEach(b=>{
     b.addEventListener('click',()=>{
       const t=b.closest('.survrow').dataset.t;
-      surv.picks[survWeek]=t; saveSurv(); renderSurv();
+      if(surv.dead!==null) return;                 // eliminated: entry is frozen
+      if(pickLocked(survWeek)) return;             // this week's pick already kicked off
+      if(survLocked(survWeek,t)) return;           // that team's game already kicked off
+      if(surv.picks[survWeek]===t) delete surv.picks[survWeek];   // tap again to clear
+      else surv.picks[survWeek]=t;
+      saveSurv(); renderSurv();
     });
   });
 
@@ -1947,12 +2006,14 @@ function renderSurv(){
       </div>`).join('')}</div>`;
   } else $('#survPath').innerHTML='';
 
-  // history
+  // history, with the outcome of each pick once its game is final
   const hist=Object.keys(surv.picks).map(Number).sort((a,b)=>a-b);
   $('#survHist').innerHTML = hist.length? `<div class="dayhead">Your picks</div>
     <div class="pathgrid">${hist.map(w=>{
-      const t=surv.picks[w];
-      return `<div class="pathcell"><em>Wk ${w}</em><span class="tag" style="background:${TEAMS[t][0]}">${t}</span><i>${((PROBS[w][t]||0)*100).toFixed(0)}%</i></div>`;
+      const t=surv.picks[w], res=pickResult(w);
+      const cls = res===true?'won' : res===false?'lost' : '';
+      const mark = res===true?'<u>SURVIVED</u>' : res===false?'<u>OUT</u>' : '';
+      return `<div class="pathcell ${cls}"><em>Wk ${w}</em><span class="tag" style="background:${TEAMS[t][0]}">${t}</span><i>${((PROBS[w][t]||0)*100).toFixed(0)}%</i>${mark}</div>`;
     }).join('')}</div>` : '';
 }
 
@@ -1964,12 +2025,24 @@ function saveSurv(){
 (function(){
   const s=$('#survSel');
   WEEKS.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent='Week '+w;s.appendChild(o);});
-  s.value=1;
+  // stored entry must load BEFORE anything reads surv.picks
+  try{const v=localStorage.getItem('survivor'); if(v) surv=JSON.parse(v);}catch(e){}
+  if(!surv || typeof surv!=='object') surv={picks:{},dead:null};
+  if(!surv.picks) surv.picks={};
+  s.value=CUR_WEEK; survWeek=CUR_WEEK;
   s.addEventListener('change',e=>{survWeek=parseInt(e.target.value,10);renderSurv();});
   $('#survReset').addEventListener('click',()=>{
-    surv={picks:{},dead:null}; saveSurv(); renderSurv();
+    // picks whose game has kicked off are part of the record and survive a reset
+    const kept={};
+    Object.keys(surv.picks).forEach(w=>{ if(pickLocked(+w)) kept[w]=surv.picks[w]; });
+    const wiped=Object.keys(surv.picks).length-Object.keys(kept).length;
+    surv.picks=kept;
+    surv.dead=evalDead(kept);
+    saveSurv(); renderSurv();
+    if(!wiped && Object.keys(kept).length){
+      $('#survStatus').innerHTML += ' <b>Nothing to reset &mdash; every pick you have made is already locked.</b>';
+    }
   });
-  try{const v=localStorage.getItem('survivor'); if(v) surv=JSON.parse(v);}catch(e){}
 })();
 
 
