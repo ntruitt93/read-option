@@ -283,9 +283,14 @@ def write_json(P, sigma, ratings, meta):
         g['tier']='must' if w>=70 else ('good' if w>=45 else 'redzone')
 
     from .config import DIVISIONS
+    # Current Kalman team strength, emitted so the app can show a team's rating and
+    # its rank without trying to solve for them from the per-game kal_margin values.
+    # These are live ratings, not frozen: unlike a game's prediction they describe
+    # the team as of this refresh, which is what a team page should show.
+    ratings_out = {t: round(float(v), 3) for t, v in ratings.items()}
     payload=dict(schema=SCHEMA_VERSION, season=SEASON, sigma=round(sigma,2),
                  generated=meta['generated'], played=meta['played'],
-                 weights=W, divisions=DIVISIONS,
+                 weights=W, divisions=DIVISIONS, ratings=ratings_out,
                  records=actual_records(games), games=games)
     (DATA/"season.json").write_text(json.dumps(payload,separators=(',',':'),allow_nan=False))
 

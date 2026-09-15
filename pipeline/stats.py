@@ -12,6 +12,10 @@ Output is keyed by season so the app can offer a year picker:
 
     {schema, generated, current, seasons: {"2025": {...}, "2026": {...}}}
 
+Each season carries `games` (per-game dominance rows), `quad` (opponent-adjusted
+offense/defense ratings) and `teams` (per-team offense/defense/special-teams
+splits with league ranks — see teamsplits.py), which is what the team pages read.
+
 A season with no played games is skipped rather than emitted empty. Thin seasons
 are emitted with the counts that produced them (`n_games`, `weeks`) so the app can
 say how much data is behind a chart instead of presenting one week as settled.
@@ -24,6 +28,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import Ridge
 
+from . import teamsplits as TS
 from .config import CACHE, STATIC, SEASON, EPA_RIDGE_ALPHA, ALIAS, SCHEMA_VERSION
 
 warnings.filterwarnings('ignore')
@@ -153,9 +158,11 @@ def build(seasons, games, tg):
             continue
 
         weeks = sorted({r['wk'] for r in dom})
-        out[str(year)] = dict(games=dom, quad=quad, n_games=len(dom), weeks=weeks)
+        teams = TS.build_for(year)
+        out[str(year)] = dict(games=dom, quad=quad, teams=teams,
+                              n_games=len(dom), weeks=weeks)
         print(f"    {year}: {len(dom)} games, weeks {weeks[0]}-{weeks[-1]}, "
-              f"{len(quad)} teams rated")
+              f"{len(quad)} teams rated, {len(teams)} team splits")
 
     if not out:
         raise RuntimeError("stats: no season produced any data")
