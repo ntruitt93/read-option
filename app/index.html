@@ -309,6 +309,7 @@ table.stand tr.in td{background:var(--surface-2);}
 .pathnote{font-size:13px;color:var(--text-2);margin-top:6px;}
 .survstatus{background:var(--surface-2);border-left:3px solid var(--team-1);padding:10px 12px;font-size:13.5px;margin:10px 0;}
 .pk:disabled{opacity:.40;cursor:default;}
+.view[hidden],.tabs button[hidden]{display:none!important;}
 .survrow.locked .survopp::after{content:' \00b7 locked';color:var(--text-3);}
 .pathcell.won{border-color:var(--good);}
 .pathcell.lost{border-color:var(--bad);}
@@ -673,7 +674,7 @@ body::before{left:0;} body::after{right:0;}
 
 <div class="orient">
   <p><b>What this is.</b> A prediction model for the 2026 season, plus the tools to argue with it. It rates every team from play-by-play data, projects each game, and keeps score of how it does &mdash; against the closing line, against simple baselines, and against you.</p>
-  <p><b>How to use it.</b> <b>Up Next</b> is the matchday view: what's on next, what's worth watching, where your picks stand. <b>Slate</b> is where you dig into a game, nudge the model with what it can't see, and lock a pick. The rest &mdash; schedule, standings, playoff scenarios, a territory map, a survivor solver, daily trivia and season stats &mdash; are there when you want them.</p>
+  <p><b>How to use it.</b> <b>Up Next</b> is the matchday view: what's on next, what's worth watching, where your picks stand. <b>Slate</b> is where you dig into a game, nudge the model with what it can't see, and lock a pick. The rest &mdash; schedule, standings, playoff scenarios, a survivor solver, daily trivia and season stats &mdash; are there when you want them.</p>
 </div>
 
 <div class="notice">
@@ -890,6 +891,25 @@ body::before{left:0;} body::after{right:0;}
 const DATA_BASE = '../data';
 const SCHEMA_EXPECTED = 1;
 
+/* ---- parked tabs ----------------------------------------------------
+   A tab named here has its button and its view hidden, and its data file is
+   not downloaded. Nothing else is removed: the renderers, the styles, the
+   generator in pipeline/ and the JSON on disk all stay exactly as they are,
+   so bringing one back is a one-line edit here.
+
+   Territory is parked as of 2026-09-15 — the concept works but the payoff
+   isn't there yet. Note that restoring it also means putting "a territory
+   map" back into the Slate orientation copy, which was reworded to match. */
+const HIDDEN_TABS = ['map'];
+
+document.querySelectorAll('.tabs button').forEach(b=>{
+  if(HIDDEN_TABS.includes(b.dataset.v)){
+    b.hidden = true;
+    const v = document.getElementById('v-'+b.dataset.v);
+    if(v){ v.hidden = true; v.classList.remove('on'); }
+  }
+});
+
 function fatal(msg, detail){
   document.body.innerHTML =
     '<div style="max-width:640px;margin:80px auto;padding:0 20px;font-family:system-ui,sans-serif;line-height:1.6">'
@@ -910,7 +930,7 @@ try{
   });
   [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON] = await Promise.all([
     j(DATA_BASE + '/season.json'),
-    j(DATA_BASE + '/static/territory.json'),
+    HIDDEN_TABS.includes('map') ? null : j(DATA_BASE + '/static/territory.json'),
     j(DATA_BASE + '/static/trivia.json'),
     j(DATA_BASE + '/static/qb.json'),
     j(DATA_BASE + '/static/stats.json'),
@@ -929,6 +949,13 @@ if(SJ.schema !== SCHEMA_EXPECTED){
 const CUR_WEEK = (function(){
   const un = SJ.games.filter(g => g.result === null || g.result === undefined);
   return un.length ? Math.min(...un.map(g => g.wk)) : Math.max(...SJ.games.map(g => g.wk));
+})();
+
+/* ---- the masthead and tab title track the live week, not a hardcoded one ---- */
+(function(){
+  const span = document.querySelector('.mast-top h1 span');
+  if(span) span.textContent = SJ.season + ' \u00b7 WEEK ' + CUR_WEEK;
+  document.title = 'The Read Option \u2014 Week ' + CUR_WEEK;
 })();
 
 /* ---- most likely final scores, simulated in the browser ---- */
@@ -1336,6 +1363,7 @@ function updateOv(){
 /* ---------- tabs ---------- */
 document.querySelectorAll('.tabs button').forEach(b=>{
   b.addEventListener('click',()=>{
+    if(HIDDEN_TABS.includes(b.dataset.v)) return;   // parked: not reachable, and inert if reached
     document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b));
     document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='v-'+b.dataset.v));
     if(b.dataset.v==='today') renderToday();
@@ -1758,7 +1786,7 @@ function renderScen(){
 let mapSeason='2026', mapWeek=18, mapBuilt=false, mapMode='conquest';
 
 function buildMap(){
-  if(mapBuilt) return;
+  if(mapBuilt || !TERR) return;      // parked: territory.json was never fetched
   const byOrig={};
   for(const fips in TERR.own0){ (byOrig[TERR.own0[fips]] = byOrig[TERR.own0[fips]]||[]).push(fips); }
   let svg='<svg viewBox="0 0 975 610" id="mapSvg" role="img" aria-label="NFL territory map of the continental United States">';
@@ -1794,6 +1822,7 @@ const MODE_NOTE={
 };
 
 function renderMap(){
+  if(!TERR) return;                  // parked: nothing to draw
   buildMap();
   const snap=currentSnap();
   document.querySelectorAll('#mapSvg g[data-orig]').forEach(g=>{
