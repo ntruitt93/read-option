@@ -30,6 +30,10 @@ LIVE_FEATURES = ['kal_margin','team_hfa','off_pass_diff','off_rush_diff','def_pa
 
 WATCH_WEIGHTS = dict(closeness=0.40, quality=0.30, scoring=0.20, stakes=0.10)
 
+# Seasons offered by the Stats tab's year picker. The current season is thin until
+# it isn't — the generators emit the counts behind every chart so the app can say so.
+STATS_SEASONS = (SEASON - 1, SEASON)
+
 DIVISIONS = {
  'AFC East':['BUF','MIA','NE','NYJ'], 'AFC North':['BAL','CIN','CLE','PIT'],
  'AFC South':['HOU','IND','JAX','TEN'], 'AFC West':['DEN','KC','LAC','LV'],

@@ -1,68 +1,171 @@
-import pandas as pd, numpy as np, json, warnings
+"""
+Season stats for the Stats tab: per-game dominance rows and opponent-adjusted
+quadrant ratings, for any set of seasons.
+
+Rewritten 2026-09-15. The previous version was a one-off script: it hardcoded
+SEA=2025, read `data/pbp_2025.parquet` and `data/team_games.parquet` from an
+earlier layout that no longer exists, and wrote stats.json into the working
+directory. It had not been runnable for some time. This version is an importable
+module that reads from config.CACHE and is called by refresh.py.
+
+Output is keyed by season so the app can offer a year picker:
+
+    {schema, generated, current, seasons: {"2025": {...}, "2026": {...}}}
+
+A season with no played games is skipped rather than emitted empty. Thin seasons
+are emitted with the counts that produced them (`n_games`, `weeks`) so the app can
+say how much data is behind a chart instead of presenting one week as settled.
+"""
+import json
+import warnings
+from datetime import datetime, timezone
+
+import numpy as np
+import pandas as pd
 from sklearn.linear_model import Ridge
+
+from .config import CACHE, STATIC, SEASON, EPA_RIDGE_ALPHA, ALIAS, SCHEMA_VERSION
+
 warnings.filterwarnings('ignore')
 
-SEA=2025
-pbp = pd.read_parquet('data/pbp_2025.parquet',
-      columns=['game_id','season','week','season_type','posteam','defteam','home_team','away_team',
-               'play_type','epa','wp','home_wp','qtr','game_seconds_remaining','score_differential'])
-pbp = pbp[(pbp.season_type=='REG') & pbp.posteam.notna()]
-sc  = pbp[(pbp.epa.notna()) & pbp.play_type.isin(['pass','run'])].copy()
+PBP_COLS = ['game_id', 'season', 'week', 'season_type', 'posteam', 'defteam',
+            'home_team', 'away_team', 'play_type', 'epa', 'wp', 'home_wp',
+            'qtr', 'game_seconds_remaining', 'score_differential']
 
-# garbage-time filter: only plays where the game was still in doubt
-sc['live'] = sc.wp.between(0.05, 0.95)
+# a game needs this many in-doubt plays before we trust the garbage-time filter;
+# below it we fall back to every play rather than judge a blowout on a handful
+MIN_LIVE_PLAYS = 40
 
-WP = {gid: d.home_wp.dropna() for gid, d in pbp[pbp.home_wp.notna()].groupby('game_id')}
-rows=[]
-for gid, d in sc.groupby('game_id'):
-    h, a = d.home_team.iloc[0], d.away_team.iloc[0]
-    L = d[d.live]
-    if len(L) < 40: L = d                      # blowouts: fall back to all plays
-    ho = L[L.posteam==h].epa.mean(); ao = L[L.posteam==a].epa.mean()
-    if np.isnan(ho) or np.isnan(ao): continue
-    # control = share of the game the HOME team spent as favourite (home_wp, not posteam wp)
-    w = WP.get(gid)
-    ctrl = float((w>0.5).mean()) if w is not None and len(w) else 0.5
-    meanwp = float(w.mean()) if w is not None and len(w) else 0.5
-    rows.append(dict(id=gid, wk=int(d.week.iloc[0]), home=h, away=a,
-                     epa_marg=round(float(ho-ao),4), ctrl=round(ctrl,3), meanwp=round(meanwp,3),
-                     live_n=int(len(L)), all_n=int(len(d))))
-D=pd.DataFrame(rows)
 
-g = pd.read_csv('data/games.csv', low_memory=False)
-g = g[(g.season==SEA)&(g.game_type=='REG')&g.result.notna()][['game_id','result','home_score','away_score']]
-D = D.merge(g, left_on='id', right_on='game_id')
-D['score_marg']=D.result
+def _load_pbp(year):
+    """Play-by-play for one season, or None if it hasn't been published yet."""
+    f = CACHE / f"pbp_{year}.parquet"
+    if not f.exists():
+        return None
+    d = pd.read_parquet(f, columns=PBP_COLS)
+    d = d[(d.season_type == 'REG') & d.posteam.notna()]
+    for c in ('posteam', 'defteam', 'home_team', 'away_team'):
+        d[c] = d[c].replace(ALIAS)
+    return d if len(d) else None
 
-# how often does the scoreboard disagree with the play-by-play?
-D['sb_win']=np.sign(D.score_marg); D['pbp_win']=np.sign(D.epa_marg)
-mismatch = (D.sb_win!=D.pbp_win).mean()
-print('games: %d | scoreboard winner lost the EPA battle in %.0f%% of them' % (len(D), 100*mismatch))
-print('corr(score margin, adj EPA margin): %.3f' % np.corrcoef(D.score_marg,D.epa_marg)[0,1])
-print('corr(score margin, control): %.3f'      % np.corrcoef(D.score_marg,D.ctrl)[0,1])
 
-# biggest disagreements
-D['gap']=(D.score_marg-D.score_marg.mean())/D.score_marg.std() - (D.epa_marg-D.epa_marg.mean())/D.epa_marg.std()
-ex=D.reindex(D.gap.abs().sort_values(ascending=False).index).head(3)
-print('\nbiggest scoreboard/play disagreements:')
-for r in ex.itertuples():
-    print('  %-18s home %s %+d on the board, %+.3f EPA/play, home control %.0f%%'
-          % (r.id, r.home, r.score_marg, r.epa_marg, 100*r.ctrl))
+def dominance(pbp, results):
+    """One row per game: opponent-agnostic EPA margin with garbage time removed.
 
-# ---------- quadrant ratings (opponent-adjusted, full 2025) ----------
-tg=pd.read_parquet('data/team_games.parquet'); tg=tg[tg.season==SEA]
-teams=sorted(tg.team.unique()); TIDX={t:i for i,t in enumerate(teams)}; N=len(teams)
-ti=tg.team.map(TIDX).values; oi=tg.opp.map(TIDX).values
-X=np.zeros((len(tg),2*N)); X[np.arange(len(tg)),ti]=1; X[np.arange(len(tg)),N+oi]=1
-R={}
-for lbl,yc,nc in [('pass','off_pass_epa','off_pass_n'),('rush','off_rush_epa','off_rush_n')]:
-    y=tg[yc].values; m=~np.isnan(y)
-    r=Ridge(alpha=55.0).fit(X[m],y[m],sample_weight=np.sqrt(tg[nc].values[m]))
-    R['off_'+lbl]=dict(zip(teams,r.coef_[:N])); R['def_'+lbl]=dict(zip(teams,r.coef_[N:]))
-R['off_all']={t:0.58*R['off_pass'][t]+0.42*R['off_rush'][t] for t in teams}
-R['def_all']={t:0.58*R['def_pass'][t]+0.42*R['def_rush'][t] for t in teams}
-quad={t:{k:round(float(R[k][t]),4) for k in R} for t in teams}
+    `ctrl` is the share of the game the home team spent as favourite, taken from
+    home_wp rather than possession wp so it reads the same way for both sides.
+    """
+    sc = pbp[pbp.epa.notna() & pbp.play_type.isin(['pass', 'run'])].copy()
+    if not len(sc):
+        return []
+    sc['live'] = sc.wp.between(0.05, 0.95)
 
-json.dump(dict(games=D[['id','wk','home','away','epa_marg','ctrl','meanwp','score_marg']]
-                 .to_dict('records'), quad=quad), open('stats.json','w'), separators=(',',':'))
-print('\nstats.json:', round(len(open('stats.json').read())/1024,1),'KB')
+    wp_by_game = {gid: d.home_wp.dropna()
+                  for gid, d in pbp[pbp.home_wp.notna()].groupby('game_id')}
+
+    rows = []
+    for gid, d in sc.groupby('game_id'):
+        h, a = d.home_team.iloc[0], d.away_team.iloc[0]
+        live = d[d.live]
+        if len(live) < MIN_LIVE_PLAYS:
+            live = d
+        ho = live[live.posteam == h].epa.mean()
+        ao = live[live.posteam == a].epa.mean()
+        if np.isnan(ho) or np.isnan(ao):
+            continue
+        w = wp_by_game.get(gid)
+        has_wp = w is not None and len(w)
+        rows.append(dict(
+            id=gid, wk=int(d.week.iloc[0]), home=h, away=a,
+            epa_marg=round(float(ho - ao), 4),
+            ctrl=round(float((w > 0.5).mean()), 3) if has_wp else 0.5,
+            meanwp=round(float(w.mean()), 3) if has_wp else 0.5,
+            live_n=int(len(live)), all_n=int(len(d))))
+
+    # attach the actual scoreboard margin; a game without a final score is dropped
+    out = []
+    for r in rows:
+        res = results.get(r['id'])
+        if res is None:
+            continue
+        r['score_marg'] = int(res)
+        out.append(r)
+    return sorted(out, key=lambda r: (r['wk'], r['id']))
+
+
+def quadrant(tg, year):
+    """Opponent-adjusted offense/defense EPA per play, one season, ridge-shrunk.
+
+    With a full season this separates teams cleanly. With one week of games the
+    ridge correctly collapses nearly everything toward zero — that is the honest
+    answer at that sample size, not a bug, but the app should say so.
+    """
+    t = tg[tg.season == year]
+    if not len(t):
+        return {}
+    teams = sorted(t.team.unique())
+    tidx = {x: i for i, x in enumerate(teams)}
+    n = len(teams)
+    ti = t.team.map(tidx).values
+    oi = t.opp.map(tidx).values
+    ok = ~pd.isna(ti) & ~pd.isna(oi)
+    t, ti, oi = t[ok], ti[ok].astype(int), oi[ok].astype(int)
+    if not len(t):
+        return {}
+
+    X = np.zeros((len(t), 2 * n))
+    X[np.arange(len(t)), ti] = 1
+    X[np.arange(len(t)), n + oi] = 1
+
+    R = {}
+    for lbl, ycol, ncol in [('pass', 'off_pass_epa', 'off_pass_n'),
+                            ('rush', 'off_rush_epa', 'off_rush_n')]:
+        y = t[ycol].values
+        m = ~np.isnan(y)
+        if m.sum() < 2:
+            return {}
+        fit = Ridge(alpha=EPA_RIDGE_ALPHA).fit(
+            X[m], y[m], sample_weight=np.sqrt(t[ncol].values[m]))
+        R['off_' + lbl] = dict(zip(teams, fit.coef_[:n]))
+        R['def_' + lbl] = dict(zip(teams, fit.coef_[n:]))
+
+    # league pass/rush split, so "overall" isn't a straight average of unequal volumes
+    R['off_all'] = {x: 0.58 * R['off_pass'][x] + 0.42 * R['off_rush'][x] for x in teams}
+    R['def_all'] = {x: 0.58 * R['def_pass'][x] + 0.42 * R['def_rush'][x] for x in teams}
+    return {x: {k: round(float(R[k][x]), 4) for k in R} for x in teams}
+
+
+def build(seasons, games, tg):
+    """Payload for every requested season that has played games."""
+    out = {}
+    for year in seasons:
+        pbp = _load_pbp(year)
+        if pbp is None:
+            print(f"    {year}: no play-by-play yet — skipped")
+            continue
+
+        g = games[(games.season == year) & (games.game_type == 'REG') & games.result.notna()]
+        results = dict(zip(g.game_id, g.result))
+        dom = dominance(pbp, results)
+        quad = quadrant(tg, year)
+        if not dom:
+            print(f"    {year}: no completed games — skipped")
+            continue
+
+        weeks = sorted({r['wk'] for r in dom})
+        out[str(year)] = dict(games=dom, quad=quad, n_games=len(dom), weeks=weeks)
+        print(f"    {year}: {len(dom)} games, weeks {weeks[0]}-{weeks[-1]}, "
+              f"{len(quad)} teams rated")
+
+    if not out:
+        raise RuntimeError("stats: no season produced any data")
+    return dict(schema=SCHEMA_VERSION,
+                generated=datetime.now(timezone.utc).isoformat(timespec='seconds'),
+                current=max(int(k) for k in out),
+                seasons=out)
+
+
+def write(payload):
+    path = STATIC / "stats.json"
+    path.write_text(json.dumps(payload, separators=(',', ':'), allow_nan=False))
+    return path, len(path.read_text())
