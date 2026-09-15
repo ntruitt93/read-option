@@ -311,6 +311,70 @@ table.stand tr.in td{background:var(--surface-2);}
 .pk:disabled{opacity:.40;cursor:default;}
 .view[hidden],.tabs button[hidden]{display:none!important;}
 .statsnote{font-size:12px;color:var(--text-3);margin-left:auto;}
+
+/* ---------- team page ---------- */
+.tlink{cursor:pointer;}
+.tlink:hover{outline:2px solid var(--text-3);outline-offset:1px;}
+.tlink:focus-visible{outline:2px solid var(--team-1);outline-offset:1px;}
+#teamScrim{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;
+  display:none;overflow-y:auto;padding:24px 12px;
+}
+#teamScrim.on{display:block;}
+.tpanel{
+  max-width:860px;margin:0 auto;background:var(--bg);border:1px solid var(--line-strong);
+  border-radius:3px;padding:0 0 18px;box-shadow:0 18px 50px rgba(0,0,0,.4);
+}
+.thead{
+  position:sticky;top:0;z-index:2;background:var(--surface);
+  border-bottom:1px solid var(--line-strong);padding:13px 16px;
+  display:flex;align-items:center;gap:11px;flex-wrap:wrap;
+}
+.thead .tmark{width:9px;height:30px;border-radius:2px;flex:none;}
+.thead h2{margin:0;font-family:"Oswald",sans-serif;font-size:19px;font-weight:500;letter-spacing:.01em;}
+.thead select{font:inherit;font-size:13px;padding:4px 6px;}
+.tclose{
+  margin-left:auto;font:inherit;font-size:19px;line-height:1;padding:5px 11px;cursor:pointer;
+  background:var(--surface-2);border:1px solid var(--line-strong);border-radius:2px;color:var(--text-2);
+}
+.tclose:hover{color:var(--text);}
+.tbody{padding:0 16px;}
+.tstrip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin:14px 0 4px;
+}
+.tstat{background:var(--surface-2);border:1px solid var(--line);border-radius:2px;padding:9px 10px;}
+.tstat b{display:block;font-family:var(--mono-num);font-size:17px;font-weight:500;line-height:1.2;}
+.tstat em{display:block;font-style:normal;font-size:10.5px;color:var(--text-3);margin-top:3px;
+  text-transform:uppercase;letter-spacing:.05em;}
+.tstat i{font-style:normal;font-size:11px;color:var(--text-3);font-family:var(--mono-num);}
+.tsec{margin-top:20px;}
+.tsec > h3{
+  margin:0 0 8px;font-family:"Oswald",sans-serif;font-size:14px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);
+  border-bottom:1px solid var(--line);padding-bottom:5px;
+}
+.tsched{width:100%;border-collapse:collapse;font-size:13px;}
+.tsched td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.tsched .wk{font-family:var(--mono-num);color:var(--text-3);width:34px;font-size:12px;}
+.tsched .vs{color:var(--text-3);font-size:12px;width:20px;}
+.tsched .opp{font-weight:500;}
+.tsched .res{font-family:var(--mono-num);font-size:12.5px;white-space:nowrap;}
+.tsched .note{color:var(--text-3);font-size:11.5px;text-align:right;}
+.tsched tr.bye td{color:var(--text-3);font-style:italic;}
+.tsched tr.won .res{color:var(--good);font-weight:600;}
+.tsched tr.lost .res{color:var(--bad);font-weight:600;}
+.tsplit{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
+.tgrid{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tgrid td{padding:4px 5px;border-bottom:1px solid var(--line);}
+.tgrid td.k{color:var(--text-2);}
+.tgrid td.v{font-family:var(--mono-num);text-align:right;font-weight:500;white-space:nowrap;}
+.tgrid td.r{font-family:var(--mono-num);text-align:right;width:44px;font-size:11px;color:var(--text-3);}
+.rk1{color:var(--good);font-weight:700;}
+.rk32{color:var(--bad);font-weight:700;}
+.tnote{font-size:12px;color:var(--text-3);line-height:1.55;margin-top:8px;}
+.tfact{border-left:3px solid var(--team-1);background:var(--surface-2);padding:9px 12px;
+  font-size:13px;line-height:1.55;margin:0 0 7px;}
+.tfact b{font-family:var(--mono-num);font-weight:600;}
 .thin{background:var(--surface-2);border-left:3px solid var(--warn);padding:8px 11px;font-size:12.5px;color:var(--text-2);margin:0 0 10px;line-height:1.5;}
 .survrow.locked .survopp::after{content:' \00b7 locked';color:var(--text-3);}
 .pathcell.won{border-color:var(--good);}
@@ -883,6 +947,18 @@ body::before{left:0;} body::after{right:0;}
     <option value="light">Light</option>
     <option value="dark">Dark</option>
   </select>
+</div>
+
+<div id="teamScrim" role="dialog" aria-modal="true" aria-label="Team page">
+  <div class="tpanel">
+    <div class="thead">
+      <span class="tmark" id="tpMark"></span>
+      <h2 id="tpName"></h2>
+      <select id="tpSel" aria-label="Choose a team"></select>
+      <button class="tclose" id="tpClose" aria-label="Close team page">&times;</button>
+    </div>
+    <div class="tbody" id="tpBody"></div>
+  </div>
 </div>
 
 <footer>
@@ -1477,9 +1553,9 @@ function srow(g, showDay){
   return `<div class="srow t-${g.tier}">
     <div class="stime">${done?'<span class="finaltag">FINAL</span>':when}</div>
     <div class="steams">
-      <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+      <span class="tag tlink" data-team="${g.away}" role="button" tabindex="0" style="background:${TEAMS[g.away][0]}">${g.away}</span>
       <span class="at">at</span>
-      <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+      <span class="tag tlink" data-team="${g.home}" role="button" tabindex="0" style="background:${TEAMS[g.home][0]}">${g.home}</span>
       ${g.watch!==undefined?`<span class="wchip w-${g.tier}" title="${TIER_LABEL[g.tier]}">${Math.round(g.watch)}<em>${g.tier==='must'?'MUST':g.tier==='good'?'GOOD':'RZ'}</em></span>`:''}
       ${g.neutral?'<span class="intl">neutral site</span>':''}
       <span class="svenue">${g.venue}</span>
@@ -1710,7 +1786,7 @@ function renderStand(){
   const row=(t,r,rank)=>{
     const a=recOf(t);
     return `<tr>
-      <td class="stname">${rank?`<span class="rk">${rank}</span>`:''}<span class="tag" style="background:${TEAMS[t][0]}">${t}</span></td>
+      <td class="stname">${rank?`<span class="rk">${rank}</span>`:''}<span class="tag tlink" data-team="${t}" role="button" tabindex="0" style="background:${TEAMS[t][0]}">${t}</span></td>
       <td class="${a.played?'hi':'muted'}">${a.w}&ndash;${a.l}${a.t?'&ndash;'+a.t:''}</td>
       <td>${r.avgWins.toFixed(1)}&ndash;${(17-r.avgWins).toFixed(1)}</td>
       <td>${(r.divPct*100).toFixed(0)}%</td>
@@ -2271,7 +2347,7 @@ function renderQuad(){
   const mx=px((xmin+xmax)/2), my=py((ymin+ymax)/2);
   const pts=ts.map(t=>{
     const x=px(QUAD[t][ok]), y=py(QUAD[t][dk]);
-    return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
+    return `<g data-team="${t}" role="button" tabindex="0" style="cursor:pointer"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
       <text x="${x.toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">${t}</text></g>`;
   }).join('');
   $('#quadBody').innerHTML=`
@@ -2652,9 +2728,9 @@ function renderToday(){
       return `<div class="watchrow${oc}">
         <div class="wscore w-${g.tier}">${Math.round(g.watch)}<em>WATCH</em></div>
         <div class="wmatch">
-          <span class="tag" style="background:${TEAMS[g.away][0]}">${g.away}</span>
+          <span class="tag tlink" data-team="${g.away}" role="button" tabindex="0" style="background:${TEAMS[g.away][0]}">${g.away}</span>
           <span class="at">at</span>
-          <span class="tag" style="background:${TEAMS[g.home][0]}">${g.home}</span>
+          <span class="tag tlink" data-team="${g.home}" role="button" tabindex="0" style="background:${TEAMS[g.home][0]}">${g.home}</span>
           <div class="wmeta">${pretty(g.time)} &middot; projected margin ${g.margin>0?'+':''}${g.margin}${g.div?' &middot; division game':''}</div>
         </div>
         <div class="wpick">${p?`<b>${p.team}</b>${over?'<span class="none">your override</span>':'<span class="none">'+p.conf+'% locked</span>'}`
@@ -2755,6 +2831,384 @@ function renderQB(){
   const sel=$('#qbSel'); if(!sel) return;
   sel.addEventListener('change',e=>{qbSel=e.target.value;renderQB();});
 })();
+
+/* ============ TEAM PAGES ============
+
+   An overlay rather than a tab: a team page needs a team chosen first, it should
+   be reachable from anywhere, and closing it should put you back where you were.
+
+   Everything here is derived from data already loaded. Sign conventions, since
+   they are the easy thing to get wrong: season.json stores `margin`, `spread` and
+   `result` from the HOME team's point of view, so each is flipped when the team
+   we're looking at is away. `flip()` is the only place that decision is made. */
+
+const TEAM_NAME = {
+  ARI:'Arizona', ATL:'Atlanta', BAL:'Baltimore', BUF:'Buffalo', CAR:'Carolina',
+  CHI:'Chicago', CIN:'Cincinnati', CLE:'Cleveland', DAL:'Dallas', DEN:'Denver',
+  DET:'Detroit', GB:'Green Bay', HOU:'Houston', IND:'Indianapolis', JAX:'Jacksonville',
+  KC:'Kansas City', LA:'LA Rams', LAC:'LA Chargers', LV:'Las Vegas', MIA:'Miami',
+  MIN:'Minnesota', NE:'New England', NO:'New Orleans', NYG:'NY Giants', NYJ:'NY Jets',
+  PHI:'Philadelphia', PIT:'Pittsburgh', SEA:'Seattle', SF:'San Francisco', TB:'Tampa Bay',
+  TEN:'Tennessee', WAS:'Washington'
+};
+
+let tpTeam = null, tpReturn = null;
+
+/** value from `t`'s point of view; home values are stored, away flips sign */
+function flip(g, t, v){ return v===null||v===undefined ? null : (g.home===t ? v : -v); }
+
+/** the season whose splits a team page shows: the live season when we have it */
+function teamSeason(){
+  if(STATS.seasons && STATS.seasons[SJ.season]) return SJ.season;
+  const ys=Object.keys(STATS.seasons||{}).map(Number).sort((a,b)=>b-a);
+  return ys.length?ys[0]:null;
+}
+function teamSplits(t){
+  const y=teamSeason();
+  const s=y!==null && STATS.seasons[y] ? STATS.seasons[y].teams : null;
+  return (s && s[t]) || null;
+}
+function teamDomRows(t){
+  const y=teamSeason();
+  const s=y!==null && STATS.seasons[y] ? STATS.seasons[y].games : [];
+  return (s||[]).filter(g=>g.home===t||g.away===t);
+}
+function teamGames(t){
+  return SEASON.games.filter(g=>g.home===t||g.away===t).sort((a,b)=>a.wk-b.wk);
+}
+function ratingOf(t){
+  const R=SJ.ratings; return (R && R[t]!==undefined) ? R[t] : null;
+}
+function ratingRank(t){
+  const R=SJ.ratings; if(!R || R[t]===undefined) return null;
+  return Object.keys(R).sort((a,b)=>R[b]-R[a]).indexOf(t)+1;
+}
+/** rank a per-team value across the league; dir -1 means smaller is better */
+function rankAmong(vals, t, dir){
+  const ks=Object.keys(vals).filter(k=>vals[k]!==null&&vals[k]!==undefined);
+  ks.sort((a,b)=> dir<0 ? vals[a]-vals[b] : vals[b]-vals[a]);
+  const i=ks.indexOf(t);
+  return i<0?null:{rank:i+1, of:ks.length};
+}
+function ord(n){
+  if(n===null||n===undefined) return '';
+  const s=['th','st','nd','rd'], v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+function rkClass(r,of){ return r===1?'rk1':(of&&r===of?'rk32':''); }
+function sgn(v,d){ return (v>0?'+':'')+v.toFixed(d===undefined?2:d); }
+
+/* ---- per-stadium home field, recovered from any home game ---- */
+function hfaByTeam(){
+  const out={};
+  SEASON.games.forEach(g=>{ if(!g.neutral && out[g.home]===undefined) out[g.home]=g.hfa; });
+  return out;
+}
+/* ---- season travel burden: miles flown to away games ---- */
+function travelByTeam(){
+  const out={};
+  ALLT.forEach(t=>out[t]=0);
+  SEASON.games.forEach(g=>{ if(!g.neutral && out[g.away]!==undefined) out[g.away]+=g.travel||0; });
+  return out;
+}
+/* ---- strength of schedule from current ratings, split played / remaining ---- */
+function sosFor(t){
+  const R=SJ.ratings; if(!R) return null;
+  let pl=[], rem=[];
+  teamGames(t).forEach(g=>{
+    const opp = g.home===t?g.away:g.home;
+    if(R[opp]===undefined) return;
+    (started(g)?pl:rem).push(R[opp]);
+  });
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+  return {played:mean(pl), remaining:mean(rem), nPlayed:pl.length, nRem:rem.length};
+}
+function sosAllRemaining(){
+  const R=SJ.ratings; if(!R) return {};
+  const out={};
+  ALLT.forEach(t=>{
+    const s=sosFor(t); out[t]=s?s.remaining:null;
+  });
+  return out;
+}
+
+/* ---- the model against the closing line, from this team's side ---- */
+function edgeVsMarket(t){
+  let n=0, sum=0;
+  teamGames(t).forEach(g=>{
+    if(g.spread===null||g.spread===undefined) return;
+    const m=flip(g,t,g.margin), s=flip(g,t,g.spread);
+    sum+=(m-s); n++;
+  });
+  return n?{avg:sum/n, n}:null;
+}
+
+/* ================= rendering ================= */
+
+function tpStrip(t){
+  const rec=(SJ.records||{})[t]||{w:0,l:0,t:0,pf:0,pa:0};
+  const rating=ratingOf(t), rrank=ratingRank(t);
+  const played=teamGames(t).filter(started);
+  const diff=rec.pf-rec.pa;
+  const sp=teamSplits(t);
+  const cells=[];
+  cells.push(`<div class="tstat"><b>${rec.w}&ndash;${rec.l}${rec.t?'&ndash;'+rec.t:''}</b><em>record</em></div>`);
+  cells.push(`<div class="tstat"><b>${rec.pf}&ndash;${rec.pa}</b><em>points</em><i>${diff>0?'+':''}${diff} diff</i></div>`);
+  if(rating!==null){
+    cells.push(`<div class="tstat"><b>${sgn(rating)}</b><em>team rating</em><i>${ord(rrank)} of 32</i></div>`);
+  }
+  if(sp){
+    const r=sp.rank||{}, of=sp.rank_of||32;
+    cells.push(`<div class="tstat"><b class="${rkClass(r.off_epa,of)}">${ord(r.off_epa)}</b><em>offense</em><i>${sgn(sp.off.epa,3)} EPA/play</i></div>`);
+    cells.push(`<div class="tstat"><b class="${rkClass(r.def_epa,of)}">${ord(r.def_epa)}</b><em>defense</em><i>${sgn(sp['def'].epa,3)} allowed</i></div>`);
+  }
+  return `<div class="tstrip">${cells.join('')}</div>`
+    + (played.length<4 ? `<div class="tnote">Season splits are built on ${played.length} game${played.length===1?'':'s'}. Ranks this early say more about who a team has played than how good it is.</div>` : '');
+}
+
+function tpSchedule(t){
+  const gs=teamGames(t);
+  const byWeek={}; gs.forEach(g=>byWeek[g.wk]=g);
+  const allWeeks=[...new Set(SEASON.games.map(g=>g.wk))].sort((a,b)=>a-b);
+  const rows=allWeeks.map(wk=>{
+    const g=byWeek[wk];
+    if(!g) return `<tr class="bye"><td class="wk">${wk}</td><td class="vs"></td><td class="opp" colspan="3">bye week</td></tr>`;
+    const home=g.home===t, opp=home?g.away:g.home;
+    const res=flip(g,t,g.result);
+    const done=g.result!==null&&g.result!==undefined;
+    const my=home?g.hs:g.as_, their=home?g.as_:g.hs;
+    const cls=!done?'':(res>0?'won':(res<0?'lost':''));
+    const model=flip(g,t,g.margin);
+    let right='';
+    if(done){
+      const called=(g.margin>0)===(g.result>0);
+      right = g.result===0?'tie':(called?'model had it &check;':'model missed &times;');
+    } else {
+      const favT = model>0 ? t : opp;
+      right = `we say ${favT} by ${Math.abs(model).toFixed(1)}`;
+    }
+    return `<tr class="${cls}">
+      <td class="wk">${wk}</td>
+      <td class="vs">${g.neutral?'<abbr title="neutral site">n</abbr>':(home?'vs':'at')}</td>
+      <td class="opp"><span class="tag tlink" data-team="${opp}" role="button" tabindex="0" style="background:${TEAMS[opp][0]}">${opp}</span></td>
+      <td class="res">${done?`${res>0?'W':(res<0?'L':'T')} ${my}&ndash;${their}`:kickLabel(g)}</td>
+      <td class="note">${right}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="tsec"><h3>Schedule</h3><table class="tsched"><tbody>${rows}</tbody></table>
+    <div class="tnote">Results are from ${TEAM_NAME[t]||t}'s side. The right column is what the model said before kickoff &mdash; frozen at the time, not re-run afterwards.</div></div>`;
+}
+
+function tpSplits(t){
+  const sp=teamSplits(t);
+  if(!sp) return `<div class="tsec"><h3>Season splits</h3><div class="empty">No splits for this season yet.</div></div>`;
+  const of=sp.rank_of||32, R=sp.rank||{};
+  const pct=v=>v===null||v===undefined?'&mdash;':(v*100).toFixed(1)+'%';
+  const num=(v,d)=>v===null||v===undefined?'&mdash;':sgn(v,d);
+
+  const row=(k,v,rank)=>`<tr><td class="k">${k}</td><td class="v">${v}</td>
+    <td class="r ${rkClass(rank,of)}">${rank?ord(rank):''}</td></tr>`;
+
+  const off=sp.off, dfn=sp['def'], st=sp.st;
+  const offTbl=`<table class="tgrid"><tbody>
+    ${row('EPA per play', num(off.epa,3), R.off_epa)}
+    ${row('Passing EPA', num(off.pass_epa,3), R.off_pass_epa)}
+    ${row('Rushing EPA', num(off.rush_epa,3), R.off_rush_epa)}
+    ${row('Success rate', pct(off.success), R.off_success)}
+    ${row('Explosive plays', pct(off.explosive), R.off_explosive)}
+    ${row('Third down', pct(off.third)+` <i>(${off.third_att})</i>`, R.off_third)}
+    ${row('Red zone TD', pct(off.rz_td)+` <i>(${off.rz_trips})</i>`, R.off_rz_td)}
+    ${row('Points per drive', off.pts_per_drive===null?'&mdash;':off.pts_per_drive.toFixed(2), R.off_pts_per_drive)}
+    ${row('Giveaways', off.giveaways, R.off_giveaways)}
+    ${row('Sacks allowed', pct(off.sack_rate), R.off_sack_rate)}
+  </tbody></table>`;
+  const defTbl=`<table class="tgrid"><tbody>
+    ${row('EPA per play', num(dfn.epa,3), R.def_epa)}
+    ${row('Passing EPA', num(dfn.pass_epa,3), R.def_pass_epa)}
+    ${row('Rushing EPA', num(dfn.rush_epa,3), R.def_rush_epa)}
+    ${row('Success rate', pct(dfn.success), R.def_success)}
+    ${row('Explosive allowed', pct(dfn.explosive), R.def_explosive)}
+    ${row('Third down', pct(dfn.third)+` <i>(${dfn.third_att})</i>`, R.def_third)}
+    ${row('Red zone TD', pct(dfn.rz_td)+` <i>(${dfn.rz_trips})</i>`, R.def_rz_td)}
+    ${row('Points per drive', dfn.pts_per_drive===null?'&mdash;':dfn.pts_per_drive.toFixed(2), R.def_pts_per_drive)}
+  </tbody></table>`;
+  const fg=(b)=>b.a?`${b.m}/${b.a}`:'&mdash;';
+  const stTbl=`<table class="tgrid"><tbody>
+    <tr><td class="k">Field goals</td><td class="v">${st.fg_a?`${st.fg_m}/${st.fg_a}`:'&mdash;'}</td><td class="r"></td></tr>
+    <tr><td class="k">Under 40</td><td class="v">${fg(st.fg_short)}</td><td class="r"></td></tr>
+    <tr><td class="k">40&ndash;49</td><td class="v">${fg(st.fg_mid)}</td><td class="r"></td></tr>
+    <tr><td class="k">50 and out</td><td class="v">${fg(st.fg_deep)}</td><td class="r"></td></tr>
+    <tr><td class="k">Longest</td><td class="v">${st.fg_long?st.fg_long+' yds':'&mdash;'}</td><td class="r"></td></tr>
+    <tr><td class="k">Extra points</td><td class="v">${st.xp_a?`${st.xp_m}/${st.xp_a}`:'&mdash;'}</td><td class="r"></td></tr>
+    <tr><td class="k">Punts</td><td class="v">${st.punts||'&mdash;'}${st.punt_avg?` <i>(${st.punt_avg} avg)</i>`:''}</td><td class="r"></td></tr>
+    <tr><td class="k">Return / coverage EPA</td><td class="v">${st.rc_epa===null?'&mdash;':sgn(st.rc_epa,3)}</td><td class="r"></td></tr>
+  </tbody></table>`;
+
+  return `<div class="tsec"><h3>Offense &amp; defense</h3>
+    <div class="tsplit">
+      <div><div class="tnote" style="margin:0 0 5px;"><b>Offense</b></div>${offTbl}</div>
+      <div><div class="tnote" style="margin:0 0 5px;"><b>Defense &mdash; what they allowed</b></div>${defTbl}</div>
+    </div>
+    <div class="tnote">Rank is out of ${of}. On defence every number is what opponents did against them, so a low number is a good defence and the rank already accounts for that. Explosive means a pass of 20+ yards or a run of 10+.</div>
+  </div>
+  <div class="tsec"><h3>Special teams</h3>
+    <div class="tsplit"><div>${stTbl}</div><div class="tnote">
+      Kicking and the return game are kept apart on purpose: a single special-teams number is
+      dominated by made field goals, which lets a good kicker hide a bad coverage unit. This is
+      the thinnest part of the page &mdash; blocked kicks, individual returners and coverage
+      tackles aren't in the data we pull, so what's here is what we can stand behind.
+    </div></div>
+  </div>`;
+}
+
+function tpLog(t){
+  const rows=teamDomRows(t);
+  if(!rows.length) return '';
+  const byId={}; SEASON.games.forEach(g=>byId[g.id]=g);
+  const body=rows.sort((a,b)=>a.wk-b.wk).map(r=>{
+    const g=byId[r.id]; if(!g) return '';
+    const home=g.home===t, opp=home?g.away:g.home;
+    const epa=home?r.epa_marg:-r.epa_marg;
+    const ctrl=home?r.ctrl:1-r.ctrl;
+    const res=flip(g,t,g.result);
+    const outplayed=(epa>0)===(res>0);
+    return `<tr class="${res>0?'won':(res<0?'lost':'')}">
+      <td class="wk">${r.wk}</td><td class="vs">${home?'vs':'at'}</td>
+      <td class="opp">${opp}</td>
+      <td class="res">${res>0?'W':(res<0?'L':'T')} ${home?g.hs:g.as_}&ndash;${home?g.as_:g.hs}</td>
+      <td class="v" style="font-family:var(--mono-num);text-align:right;">${sgn(epa,3)}</td>
+      <td class="v" style="font-family:var(--mono-num);text-align:right;">${(ctrl*100).toFixed(0)}%</td>
+      <td class="note">${res===0?'':(outplayed?'':'scoreboard disagreed')}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="tsec"><h3>Game log</h3>
+    <table class="tsched"><thead><tr>
+      <td class="wk">WK</td><td class="vs"></td><td class="opp">OPP</td><td class="res">RESULT</td>
+      <td class="note" style="text-align:right;">EPA/PLAY</td><td class="note" style="text-align:right;">CONTROL</td><td></td>
+    </tr></thead><tbody>${body}</tbody></table>
+    <div class="tnote">EPA per play is this team minus its opponent, garbage time removed. Control is the share of the game they spent as favourite. When those two disagree with the result, the scoreboard flattered somebody &mdash; that row is flagged.</div>
+  </div>`;
+}
+
+function tpFacts(t){
+  const facts=[];
+  const name=TEAM_NAME[t]||t;
+
+  // per-stadium home field
+  const H=hfaByTeam();
+  if(H[t]!==undefined){
+    const r=rankAmong(H,t,1);
+    const venue=(teamGames(t).find(g=>g.home===t&&!g.neutral)||{}).venue||'their stadium';
+    facts.push(`Home field at <b>${venue}</b> is worth <b>${H[t].toFixed(2)}</b> points to the model &mdash;
+      ${ord(r.rank)} of ${r.of}. This is fitted per stadium rather than assumed league-wide, so it reflects
+      how much this particular building has actually been worth.`);
+  }
+
+  // travel burden
+  const TR=travelByTeam();
+  if(TR[t]){
+    const r=rankAmong(TR,t,1);
+    facts.push(`They fly <b>${Math.round(TR[t]).toLocaleString()}</b> miles to away games this season,
+      ${ord(r.rank)} most of ${r.of}. Travel is a real if small term in the model &mdash; every thousand
+      miles costs the visiting team about 0.6 points.`);
+  }
+
+  // strength of schedule, remaining
+  const s=sosFor(t);
+  if(s && s.remaining!==null){
+    const all=sosAllRemaining();
+    const r=rankAmong(all,t,1);
+    facts.push(`What's left of their schedule rates <b>${sgn(s.remaining)}</b> in average opponent strength
+      across ${s.nRem} games &mdash; ${ord(r.rank)} hardest of ${r.of}. Opponent strength here is the model's
+      own team rating, not opponents' win-loss, so it doesn't punish a team for beating its schedule.`);
+  }
+
+  // model against the market
+  const e=edgeVsMarket(t);
+  if(e){
+    const dir=e.avg>0?'more':'less';
+    facts.push(`Across ${e.n} games with a line, the model is <b>${Math.abs(e.avg).toFixed(1)}</b> points
+      ${dir} bullish on ${name} than the closing line. A gap that size is the model disagreeing with the
+      market about this team specifically &mdash; worth watching, not worth trusting on its own.`);
+  }
+
+  // scoreboard against the play-by-play
+  const rows=teamDomRows(t);
+  if(rows.length){
+    const byId={}; SEASON.games.forEach(g=>byId[g.id]=g);
+    let out=0, won=0, n=0;
+    rows.forEach(r=>{
+      const g=byId[r.id]; if(!g||g.result===null||g.result===undefined||g.result===0) return;
+      const home=g.home===t;
+      const epa=home?r.epa_marg:-r.epa_marg, res=flip(g,t,g.result);
+      if(epa>0) out++; if(res>0) won++; n++;
+    });
+    if(n){
+      const verdict = out>won ? `outplayed their record` : (out<won ? `been flattered by the scoreboard` : `matched their record`);
+      facts.push(`They have won the play-by-play in <b>${out}</b> of ${n} games and the scoreboard in
+        <b>${won}</b>. On that evidence they have ${verdict}. With ${n} game${n===1?'':'s'} played this is a
+        description, not a projection.`);
+    }
+  }
+
+  if(!facts.length) return '';
+  return `<div class="tsec"><h3>Things you might not know</h3>
+    ${facts.map(f=>`<div class="tfact">${f}</div>`).join('')}</div>`;
+}
+
+function renderTeam(t){
+  tpTeam=t;
+  const c=TEAMS[t]?TEAMS[t][0]:'var(--team-1)';
+  $('#tpMark').style.background=c;
+  $('#tpName').textContent=`${TEAM_NAME[t]||t} ${''}`.trim()+` · ${t}`;
+  $('#tpSel').value=t;
+  $('#tpBody').innerHTML = tpStrip(t) + tpSchedule(t) + tpSplits(t) + tpLog(t) + tpFacts(t);
+  $('#teamScrim').scrollTop=0;
+}
+
+function openTeam(t){
+  if(!TEAMS[t]) return;
+  tpReturn=document.activeElement;
+  $('#teamScrim').classList.add('on');
+  document.body.style.overflow='hidden';
+  renderTeam(t);
+  $('#tpClose').focus();
+}
+function closeTeam(){
+  $('#teamScrim').classList.remove('on');
+  document.body.style.overflow='';
+  if(tpReturn && tpReturn.focus) tpReturn.focus();
+  tpReturn=null;
+}
+
+(function(){
+  const sel=$('#tpSel');
+  ALLT.slice().sort((a,b)=>(TEAM_NAME[a]||a).localeCompare(TEAM_NAME[b]||b)).forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=(TEAM_NAME[t]||t)+' ('+t+')';
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change',e=>renderTeam(e.target.value));
+  $('#tpClose').addEventListener('click',closeTeam);
+  $('#teamScrim').addEventListener('click',e=>{ if(e.target.id==='teamScrim') closeTeam(); });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && $('#teamScrim').classList.contains('on')) closeTeam();
+  });
+  // delegated: only elements explicitly marked data-team open a page, so pick
+  // buttons, the bracket and the survivor board stay inert
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('[data-team]');
+    if(!el) return;
+    e.preventDefault(); e.stopPropagation();
+    openTeam(el.dataset.team);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter' && e.key!==' ') return;
+    const el=e.target.closest && e.target.closest('[data-team]');
+    if(!el) return;
+    e.preventDefault(); openTeam(el.dataset.team);
+  });
+})();
+
 
 /* ---- single initial paint: every const above is initialised by this point ---- */
 function initialRender(){
