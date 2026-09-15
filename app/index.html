@@ -310,6 +310,8 @@ table.stand tr.in td{background:var(--surface-2);}
 .survstatus{background:var(--surface-2);border-left:3px solid var(--team-1);padding:10px 12px;font-size:13.5px;margin:10px 0;}
 .pk:disabled{opacity:.40;cursor:default;}
 .view[hidden],.tabs button[hidden]{display:none!important;}
+.statsnote{font-size:12px;color:var(--text-3);margin-left:auto;}
+.thin{background:var(--surface-2);border-left:3px solid var(--warn);padding:8px 11px;font-size:12.5px;color:var(--text-2);margin:0 0 10px;line-height:1.5;}
 .survrow.locked .survopp::after{content:' \00b7 locked';color:var(--text-3);}
 .pathcell.won{border-color:var(--good);}
 .pathcell.lost{border-color:var(--bad);}
@@ -827,30 +829,37 @@ body::before{left:0;} body::after{right:0;}
 
 
 <section class="view" id="v-stats">
+  <div class="weekbar">
+    <label for="yrSel" style="font-size:13px;">Season</label>
+    <select id="yrSel"></select>
+    <span class="statsnote" id="statsSample"></span>
+  </div>
   <div class="sec" id="secDom">
     <button class="sechead">How badly did they get beat?
-      <small>2025 &middot; play-level dominance with garbage time removed</small><span class="chev">&#9660;</span></button>
+      <small><span class="yrtag">2025</span> &middot; play-level dominance with garbage time removed</small><span class="chev">&#9660;</span></button>
     <div class="secbody">
       <div class="weekbar">
         <label for="domSel" style="font-size:13px;">Week</label>
         <select id="domSel"></select>
       </div>
+      <div id="domThin"></div>
       <div id="domBody"></div>
     </div>
   </div>
 
   <div class="sec" id="secQB">
     <button class="sechead">Where the quarterback throws
-      <small>2025 &middot; by field zone, against the league baseline</small><span class="chev">&#9660;</span></button>
+      <small><span class="yrtag">2025</span> &middot; by field zone, against the league baseline</small><span class="chev">&#9660;</span></button>
     <div class="secbody">
       <div class="qbpick"><label for="qbSel" style="font-size:13px;">Passer</label><select id="qbSel"></select></div>
+      <div id="qbThin"></div>
       <div id="qbBody"></div>
     </div>
   </div>
 
   <div class="sec" id="secQuad">
     <button class="sechead">Offense against defense
-      <small>2025 &middot; opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
+      <small><span class="yrtag">2025</span> &middot; opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
     <div class="secbody">
       <div class="weekbar">
         <div class="seg" role="group">
@@ -859,6 +868,7 @@ body::before{left:0;} body::after{right:0;}
           <button data-q="rush" aria-pressed="false">Rushing</button>
         </div>
       </div>
+      <div id="quadThin"></div>
       <div class="quadwrap" id="quadBody"></div>
     </div>
   </div>
@@ -950,6 +960,43 @@ const CUR_WEEK = (function(){
   const un = SJ.games.filter(g => g.result === null || g.result === undefined);
   return un.length ? Math.min(...un.map(g => g.wk)) : Math.max(...SJ.games.map(g => g.wk));
 })();
+
+/* ---- stats payloads ----------------------------------------------
+   Season-keyed as of 2026-09-15; flat (one implicit season) before that. The app
+   and the data files are uploaded separately, so a deploy can land either way
+   round — tolerate both shapes rather than blank the tab on a version skew. ---- */
+function seasonify(payload, fallbackYear){
+  if(payload && payload.seasons) return payload;
+  const s={}; s[fallbackYear]=payload||{};
+  return {seasons:s, current:fallbackYear, legacy:true};
+}
+STATS = seasonify(STATS, SJ.season - 1);
+QB    = seasonify(QB,    SJ.season - 1);
+
+const STATS_YEARS = Object.keys(STATS.seasons).map(Number).sort((a,b)=>b-a);
+let statsYear = STATS_YEARS.includes(SJ.season) ? SJ.season : STATS_YEARS[0];
+
+/** the stats payload for the selected season, never undefined */
+function statsFor(){
+  return STATS.seasons[statsYear] || {games:[], quad:{}, n_games:0, weeks:[]};
+}
+/** the qb payload for the selected season; null when that year has none */
+function qbFor(){
+  return (QB.seasons && QB.seasons[statsYear]) || null;
+}
+/** weeks present in the selected season's data */
+function statsWeeks(){
+  const w = statsFor().weeks;
+  if(w && w.length) return w.slice();
+  return [...new Set(statsFor().games.map(g=>g.wk))].sort((a,b)=>a-b);
+}
+/* Stats only exist for games that have been played, so the useful default is the
+   most recent week with data — not CUR_WEEK, which is the week about to be
+   played and therefore always empty here. */
+function latestStatsWeek(){
+  const w = statsWeeks();
+  return w.length ? w[w.length-1] : 1;
+}
 
 /* ---- the masthead and tab title track the live week, not a hardcoded one ---- */
 (function(){
@@ -2148,13 +2195,43 @@ function saveTriv(){
 
 /* ============ STATS ============ */
 
-let domWeek=1, quadMode='all';
+let domWeek=1, quadMode='all';   // domWeek is set from the data in the stats IIFE below
+let qbSel=null;                  // declared here: the stats IIFE below assigns it, and a
+                                 // `let` further down the file would be a temporal dead zone
 
-function renderStats(){ renderDom(); renderQB(); renderQuad(); }
+function renderStats(){ syncStatsChrome(); renderDom(); renderQB(); renderQuad(); }
+
+/** how thin is this season? returns a sentence, or '' when there's enough to judge */
+function thinNote(nGames){
+  if(!nGames) return 'No completed games in this season yet.';
+  if(nGames >= 64) return '';
+  const wk = statsWeeks().length;
+  return `Only ${nGames} game${nGames===1?'':'s'} across ${wk} week${wk===1?'':'s'} so far. `
+       + 'Opponent adjustment needs a few weeks before it separates teams from their schedules, '
+       + 'so treat everything here as provisional.';
+}
+
+/** year label + sample line, kept in step with the selected season */
+function syncStatsChrome(){
+  document.querySelectorAll('#v-stats .yrtag').forEach(e=>e.textContent=statsYear);
+  const s=statsFor(), wk=statsWeeks().length;
+  // legacy flat payloads carry no counts; derive them so the line still reads right
+  if(s.n_games===undefined) s.n_games=(s.games||[]).length;
+  const note=$('#statsSample');
+  if(note){
+    note.textContent = s.n_games
+      ? `${s.n_games} game${s.n_games===1?'':'s'} \u00b7 ${wk===1?'week 1 only':wk+' weeks'}`
+      : 'no games yet';
+  }
+  const thin=thinNote(s.n_games);
+  ['#domThin','#quadThin'].forEach(sel=>{
+    const el=$(sel); if(el) el.innerHTML = thin ? `<div class="thin">${thin}</div>` : '';
+  });
+}
 
 
 function renderDom(){
-  const gs=STATS.games.filter(g=>g.wk===domWeek);
+  const gs=statsFor().games.filter(g=>g.wk===domWeek);
   if(!gs.length){ $('#domBody').innerHTML='<div class="empty">No games.</div>'; return; }
   const MAX=Math.max(0.35, ...gs.map(g=>Math.abs(g.epa_marg)));
   const MAXS=Math.max(14, ...gs.map(g=>Math.abs(g.score_marg)));
@@ -2183,15 +2260,17 @@ function renderDom(){
 
 function renderQuad(){
   const key=quadMode, ok='off_'+key, dk='def_'+key;
-  const ts=Object.keys(STATS.quad);
-  const xs=ts.map(t=>STATS.quad[t][ok]), ys=ts.map(t=>STATS.quad[t][dk]);
+  const QUAD=statsFor().quad||{};
+  const ts=Object.keys(QUAD);
+  if(!ts.length){ $('#quadBody').innerHTML='<div class="empty">No ratings for this season yet.</div>'; return; }
+  const xs=ts.map(t=>QUAD[t][ok]), ys=ts.map(t=>QUAD[t][dk]);
   const xmin=Math.min(...xs), xmax=Math.max(...xs), ymin=Math.min(...ys), ymax=Math.max(...ys);
   const px=v=>60+((v-xmin)/(xmax-xmin||1))*300;
   // defence: lower is better, so invert the axis (good defence sits high)
   const py=v=>30+((v-ymin)/(ymax-ymin||1))*300;
   const mx=px((xmin+xmax)/2), my=py((ymin+ymax)/2);
   const pts=ts.map(t=>{
-    const x=px(STATS.quad[t][ok]), y=py(STATS.quad[t][dk]);
+    const x=px(QUAD[t][ok]), y=py(QUAD[t][dk]);
     return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
       <text x="${x.toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">${t}</text></g>`;
   }).join('');
@@ -2207,18 +2286,55 @@ function renderQuad(){
     <text class="axlab" x="220" y="362" text-anchor="middle">offense &rarr; better</text>
     <text class="axlab" x="14" y="185" text-anchor="middle" transform="rotate(-90 14 185)">defense &rarr; better</text>
   </svg>
-  <div class="domlegend">Both axes are opponent-adjusted EPA per play across 2025. The defensive axis is inverted so that up and to the right is good at both. Distance from the centre lines is how far a team sat from league average.</div>`;
+  <div class="domlegend">Both axes are opponent-adjusted EPA per play across ${statsYear}. The defensive axis is inverted so that up and to the right is good at both. Distance from the centre lines is how far a team sat from league average.</div>`;
 }
 
 (function(){
   document.querySelectorAll('.sechead').forEach(b=>{
     b.addEventListener('click',()=>b.closest('.sec').classList.toggle('closed'));
   });
-  const s=$('#domSel');
-  [...new Set(STATS.games.map(g=>g.wk))].sort((a,b)=>a-b).forEach(w=>{
-    const o=document.createElement('option');o.value=w;o.textContent='Week '+w;s.appendChild(o);
+  // season picker drives all three sections
+  const ys=$('#yrSel');
+  STATS_YEARS.forEach(y=>{
+    const o=document.createElement('option');o.value=y;o.textContent=y;ys.appendChild(o);
   });
-  s.value=1; s.addEventListener('change',e=>{domWeek=parseInt(e.target.value,10);renderDom();});
+  ys.value=statsYear;
+
+  const s=$('#domSel');
+  function fillWeeks(){
+    s.innerHTML='';
+    statsWeeks().forEach(w=>{
+      const o=document.createElement('option');o.value=w;o.textContent='Week '+w;s.appendChild(o);
+    });
+    domWeek=latestStatsWeek();
+    s.value=domWeek;
+  }
+  function fillPassers(){
+    const sel=$('#qbSel'); if(!sel) return;
+    const Y=qbFor();
+    sel.innerHTML='';
+    if(!Y){ qbSel=null; return; }
+    const list=Object.entries(Y.qbs).sort((a,b)=>b[1].att-a[1].att);
+    list.forEach(([id,q])=>{
+      const o=document.createElement('option');o.value=id;o.textContent=`${q.name} (${q.team})`;sel.appendChild(o);
+    });
+    qbSel = list.length ? list[0][0] : null;
+    if(qbSel) sel.value=qbSel;
+    const thin=$('#qbThin');
+    if(thin){
+      thin.innerHTML = (Y.min_att && Y.min_att < 150)
+        ? `<div class="thin">Qualifying bar lowered to ${Y.min_att} charted attempts because only `
+          + `${Y.weeks.length} week${Y.weeks.length===1?'':'s'} have been played &mdash; a full season asks for 150. `
+          + `Six zones over that few throws is a handful of passes per cell; the attempt count in each cell is the thing to read.</div>`
+        : '';
+    }
+  }
+  fillWeeks(); fillPassers();
+  ys.addEventListener('change',e=>{
+    statsYear=parseInt(e.target.value,10);
+    fillWeeks(); fillPassers(); renderStats();
+  });
+  s.addEventListener('change',e=>{domWeek=parseInt(e.target.value,10);renderDom();});
   document.querySelectorAll('#v-stats .seg button[data-q]').forEach(b=>{
     b.addEventListener('click',()=>{
       quadMode=b.dataset.q;
@@ -2574,7 +2690,6 @@ function renderToday(){
 
 /* ============ QB PASSING CHART ============ */
 
-let qbSel=null;
 const ZL=['left','middle','right'];
 
 function zColor(epa, baseEpa){
@@ -2586,9 +2701,12 @@ function zColor(epa, baseEpa){
 }
 
 function renderQB(){
-  const q=QB.qbs[qbSel]; if(!q) return;
+  const Y=qbFor();
+  if(!Y){ $('#qbBody').innerHTML='<div class="empty">No passing chart for this season yet.</div>'; return; }
+  const q=Y.qbs[qbSel]; if(!q) return;
+  const QBASE=Y.base;
   const cell=(depth,loc)=>{
-    const k=depth+'_'+loc, z=q.zones[k], b=QB.base[k];
+    const k=depth+'_'+loc, z=q.zones[k], b=QBASE[k];
     if(!z || !z.n) return `<div class="zcell dim"><div class="zn">no attempts</div></div>`;
     const dCmp=z.cmp-b.cmp;
     return `<div class="zcell" style="background:${zColor(z.epa,b.epa)}">
@@ -2633,10 +2751,8 @@ function renderQB(){
   }catch(e){}
 })();
 (function(){
+  // the passer list itself is rebuilt per season by fillPassers(); this only binds the change
   const sel=$('#qbSel'); if(!sel) return;
-  const list=Object.entries(QB.qbs).sort((a,b)=>b[1].att-a[1].att);
-  list.forEach(([id,q])=>{const o=document.createElement('option');o.value=id;o.textContent=`${q.name} (${q.team})`;sel.appendChild(o);});
-  qbSel=list[0][0]; sel.value=qbSel;
   sel.addEventListener('change',e=>{qbSel=e.target.value;renderQB();});
 })();
 
