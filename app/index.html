@@ -375,6 +375,51 @@ table.stand tr.in td{background:var(--surface-2);}
 .tfact{border-left:3px solid var(--team-1);background:var(--surface-2);padding:9px 12px;
   font-size:13px;line-height:1.55;margin:0 0 7px;}
 .tfact b{font-family:var(--mono-num);font-weight:600;}
+
+/* ---------- advanced charts ---------- */
+.advsvg{width:100%;height:auto;display:block;overflow:visible;color:var(--text-3);}
+.advsvg .axg{stroke:var(--line);stroke-width:1;}
+.advsvg .axzero{stroke:var(--line-strong);stroke-width:1.5;}
+.advsvg .axref{stroke:var(--line-strong);stroke-width:1;stroke-dasharray:3 3;}
+.advsvg .axt{fill:var(--text-3);font-size:10px;font-family:var(--mono-num);}
+.advsvg .axname{fill:var(--text-3);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;}
+.advsvg .ptdot{stroke:var(--surface);stroke-width:2;}
+.advsvg .ptlab{fill:#fff;font-size:8px;font-weight:600;pointer-events:none;font-family:"Oswald",sans-serif;}
+.advsvg .pt{cursor:pointer;}
+.advsvg .pt:hover .ptdot,.advsvg .pt:focus .ptdot{stroke:var(--text);stroke-width:2.5;}
+.advsvg .pt:focus{outline:none;}
+.advsvg .ghostline{stroke:var(--text-3);stroke-width:1;opacity:.5;}
+.advsvg .ghostdot{fill:none;stroke:var(--text-3);stroke-width:1.5;opacity:.75;}
+.advsvg .errbar{stroke:var(--line-strong);stroke-width:2;}
+.advsvg .mkdot{fill:var(--text-2);stroke:var(--surface);stroke-width:2;}
+.advsvg .mkdot.sig{fill:var(--bad);}
+.advsvg .binlab{fill:var(--text-2);font-size:11px;}
+.advsvg .grouplab{fill:var(--text);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.advsvg .trline{fill:none;stroke-width:1.2;opacity:.30;cursor:pointer;}
+.advsvg .trline:hover{opacity:.9;stroke-width:2;}
+.advsvg .trline.on{opacity:1;stroke-width:2.5;}
+.advsvg .trline.off{opacity:.13;}
+.advtip{
+  position:fixed;z-index:80;pointer-events:none;max-width:260px;
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:3px;
+  padding:8px 10px;font-size:12px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.22);
+}
+.advtip b{font-family:"Oswald",sans-serif;font-size:13px;font-weight:500;}
+.advtip .tt-team{color:var(--text-3);font-size:11px;margin-left:4px;}
+.advtip table.tt{width:100%;border-collapse:collapse;margin-top:5px;}
+.advtip table.tt td{padding:1.5px 0;font-size:11.5px;color:var(--text-2);}
+.advtip table.tt td:last-child{text-align:right;font-family:var(--mono-num);color:var(--text);font-weight:500;}
+.advtip table.tt tr.tt-hr td{border-top:1px solid var(--line);padding-top:4px;}
+.advtip table.tt tr.tt-dim td{color:var(--text-3);font-size:11px;font-weight:400;}
+.advnote{font-size:12.5px;color:var(--text-2);line-height:1.6;margin-top:9px;}
+.advnote b{font-family:var(--mono-num);color:var(--text);font-weight:600;}
+.advbar{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
+.advbar select{font:inherit;font-size:13px;padding:4px 6px;}
+.advlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-3);margin-top:7px;}
+.advlegend i{font-style:normal;display:inline-flex;align-items:center;gap:5px;}
+.advkey{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.advkey.solid{background:var(--text-2);}
+.advkey.hollow{border:1.5px solid var(--text-3);}
 .thin{background:var(--surface-2);border-left:3px solid var(--warn);padding:8px 11px;font-size:12.5px;color:var(--text-2);margin:0 0 10px;line-height:1.5;}
 .survrow.locked .survopp::after{content:' \00b7 locked';color:var(--text-3);}
 .pathcell.won{border-color:var(--good);}
@@ -921,6 +966,74 @@ body::before{left:0;} body::after{right:0;}
     </div>
   </div>
 
+  <div class="sec closed" id="secCPOE">
+    <button class="sechead">Accuracy against value
+      <small><span class="yrtag">2026</span> &middot; CPOE and EPA for every team's main passer<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div id="advQB"></div>
+      <div class="advlegend">
+        <i><span class="advkey solid"></span>what he has done</i>
+        <i><span class="advkey hollow"></span>what the model believes</i>
+      </div>
+      <div class="advnote" id="advQBNote"></div>
+    </div>
+  </div>
+
+  <div class="sec closed" id="secMarket">
+    <button class="sechead">Where is the market wrong?
+      <small>every closing line 2018&ndash;2025, sorted by the excuses people make<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div id="advMarket"></div>
+      <div class="advnote" id="advMarketNote"></div>
+    </div>
+  </div>
+
+  <div class="sec closed" id="secLineFit">
+    <button class="sechead">Does beating the line stick?
+      <small>first half of a season against the second, every team, eight years<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div id="advLineFit"></div>
+      <div class="advnote" id="advLineFitNote"></div>
+    </div>
+  </div>
+
+  <div class="sec closed" id="secPROE">
+    <button class="sechead">Who passes more than the situation asks?
+      <small><span class="yrtag">2026</span> &middot; pass rate over expected against success<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div id="advPROE"></div>
+      <div class="advnote">Pass rate over expected strips out down, distance, score and clock, so what's
+        left is what the coach <em>chose</em>. Right of the line is pass-happier than the situation called
+        for; up the axis is more successful. It is a map of philosophy, not of talent.</div>
+    </div>
+  </div>
+
+  <div class="sec closed" id="secLev">
+    <button class="sechead">Who plays when it is still a game?
+      <small><span class="yrtag">2026</span> &middot; EPA weighted by how much the game was in doubt<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div id="advLev"></div>
+      <div class="advnote" id="advLevNote"></div>
+    </div>
+  </div>
+
+  <div class="sec closed" id="secTraj">
+    <button class="sechead">The model changing its mind
+      <small>team strength, week by week, from the Kalman filter itself<span class="chev">&#9660;</span></small></button>
+    <div class="secbody">
+      <div class="advbar">
+        <label for="trajSel" style="font-size:13px;">Highlight</label>
+        <select id="trajSel"></select>
+      </div>
+      <div id="advTraj"></div>
+      <div class="advnote">This is the model's internal state, not a summary of results: a rating of +4
+        means the filter expects that team to beat an average one by four points on a neutral field.
+        It moves on <em>how</em> a team won, not whether it did, and it regresses toward the middle
+        between seasons &mdash; the dashed line is where one season ends and the next begins. Click a
+        line to pin it.</div>
+    </div>
+  </div>
+
   <div class="sec" id="secQuad">
     <button class="sechead">Offense against defense
       <small><span class="yrtag">2025</span> &middot; opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
@@ -1008,20 +1121,21 @@ function fatal(msg, detail){
 }
 
 (async function boot(){
-let SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON;
+let SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON, ADV;
 try{
   const j = u => fetch(u, {cache:'no-cache'}).then(r=>{
     if(!r.ok) throw new Error(u.split('/').pop() + ' returned ' + r.status);
     return r.json();
   });
-  [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON] = await Promise.all([
+  [SJ, TERR, TRIVIA, QB, STATS, SCOREFREQ, PRESEASON, ADV] = await Promise.all([
     j(DATA_BASE + '/season.json'),
     HIDDEN_TABS.includes('map') ? null : j(DATA_BASE + '/static/territory.json'),
     j(DATA_BASE + '/static/trivia.json'),
     j(DATA_BASE + '/static/qb.json'),
     j(DATA_BASE + '/static/stats.json'),
     j(DATA_BASE + '/static/scorefreq.json'),
-    j(DATA_BASE + '/static/preseason.json').catch(()=>null)   // optional
+    j(DATA_BASE + '/static/preseason.json').catch(()=>null),  // optional
+    j(DATA_BASE + '/static/advanced.json').catch(()=>null)    // optional: newer than the app
   ]);
 }catch(err){ fatal('The data files could not be fetched.', err.message); return; }
 
@@ -2275,7 +2389,7 @@ let domWeek=1, quadMode='all';   // domWeek is set from the data in the stats II
 let qbSel=null;                  // declared here: the stats IIFE below assigns it, and a
                                  // `let` further down the file would be a temporal dead zone
 
-function renderStats(){ syncStatsChrome(); renderDom(); renderQB(); renderQuad(); }
+function renderStats(){ syncStatsChrome(); renderDom(); renderQB(); renderQuad(); renderAdvanced(); }
 
 /** how thin is this season? returns a sentence, or '' when there's enough to judge */
 function thinNote(nGames){
@@ -3207,6 +3321,412 @@ function closeTeam(){
     if(!el) return;
     e.preventDefault(); openTeam(el.dataset.team);
   });
+})();
+
+
+/* ============ ADVANCED STATS ============
+
+   Six charts on shared scaffolding. Conventions that hold across all of them:
+
+   - one measure per axis, never two scales on one axis
+   - colour carries team identity only; every number and label wears a text token
+   - grid and axes are recessive, marks are thin, overlapping marks get a surface ring
+   - every chart has a hover layer; the tooltip is the place detail lives, so the
+     plot itself never needs a number printed on each point
+   - light and dark both come from the app's existing tokens, so neither is an
+     automatic flip of the other                                              */
+
+const ADV_PAD = {l:46, r:14, t:14, b:34};
+
+function advHas(k){ return !!(ADV && ADV[k]); }
+
+/* ---- a tooltip shared by every chart ---- */
+let advTipEl=null;
+function advTip(){
+  if(!advTipEl){
+    advTipEl=document.createElement('div');
+    advTipEl.className='advtip'; advTipEl.hidden=true;
+    document.body.appendChild(advTipEl);
+  }
+  return advTipEl;
+}
+function tipShow(html, ev){
+  const el=advTip();
+  el.innerHTML=html; el.hidden=false;
+  const pad=14, w=el.offsetWidth, h=el.offsetHeight;
+  let x=ev.clientX+pad, y=ev.clientY+pad;
+  if(x+w>window.innerWidth-8) x=ev.clientX-w-pad;
+  if(y+h>window.innerHeight-8) y=ev.clientY-h-pad;
+  el.style.left=Math.max(4,x)+'px'; el.style.top=Math.max(4,y)+'px';
+}
+function tipHide(){ if(advTipEl) advTipEl.hidden=true; }
+
+/* ---- scales and ticks ---- */
+function niceTicks(lo, hi, want){
+  if(!(hi>lo)) return [lo];
+  const raw=(hi-lo)/(want||5), mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag;
+  const s=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  const out=[]; for(let v=Math.ceil(lo/s)*s; v<=hi+1e-9; v+=s) out.push(+v.toFixed(10));
+  return out.length?out:[lo,hi];
+}
+function padRange(vals, frac){
+  const lo=Math.min(...vals), hi=Math.max(...vals);
+  const pad=((hi-lo)||1)*(frac===undefined?0.10:frac);
+  return [lo-pad, hi+pad];
+}
+
+/**
+ * Scatter with axes, optional reference lines, hover per point.
+ * pts: {x,y,label,color,r,ghost:{x,y},tip}
+ */
+function advScatter(host, o){
+  const W=o.width||560, H=o.height||360;
+  const P=Object.assign({}, ADV_PAD, o.pad||{});
+  const iw=W-P.l-P.r, ih=H-P.t-P.b;
+  const [x0,x1]=o.xDomain||padRange(o.pts.map(p=>p.x));
+  const [y0,y1]=o.yDomain||padRange(o.pts.map(p=>p.y));
+  const X=v=>P.l+((v-x0)/((x1-x0)||1))*iw;
+  const Y=v=>P.t+ih-((v-y0)/((y1-y0)||1))*ih;
+  const xt=niceTicks(x0,x1,5), yt=niceTicks(y0,y1,5);
+  const fx=o.xFmt||(v=>String(+v.toFixed(2)));
+  const fy=o.yFmt||(v=>String(+v.toFixed(2)));
+
+  let g='';
+  xt.forEach(t=>{ g+=`<line class="axg" x1="${X(t).toFixed(1)}" y1="${P.t}" x2="${X(t).toFixed(1)}" y2="${P.t+ih}"/>`
+                  +`<text class="axt" x="${X(t).toFixed(1)}" y="${P.t+ih+15}" text-anchor="middle">${fx(t)}</text>`; });
+  yt.forEach(t=>{ g+=`<line class="axg" x1="${P.l}" y1="${Y(t).toFixed(1)}" x2="${P.l+iw}" y2="${Y(t).toFixed(1)}"/>`
+                  +`<text class="axt" x="${P.l-7}" y="${(Y(t)+3.5).toFixed(1)}" text-anchor="end">${fy(t)}</text>`; });
+
+  (o.refs||[]).forEach(r=>{
+    if(r.x!==undefined) g+=`<line class="axref" x1="${X(r.x).toFixed(1)}" y1="${P.t}" x2="${X(r.x).toFixed(1)}" y2="${P.t+ih}"/>`;
+    if(r.y!==undefined) g+=`<line class="axref" x1="${P.l}" y1="${Y(r.y).toFixed(1)}" x2="${P.l+iw}" y2="${Y(r.y).toFixed(1)}"/>`;
+    if(r.diag)          g+=`<line class="axref" x1="${X(Math.max(x0,y0)).toFixed(1)}" y1="${Y(Math.max(x0,y0)).toFixed(1)}" x2="${X(Math.min(x1,y1)).toFixed(1)}" y2="${Y(Math.min(x1,y1)).toFixed(1)}"/>`;
+  });
+
+  // ghost (model estimate) drawn under the real marks so it reads as annotation
+  o.pts.forEach(p=>{
+    if(!p.ghost) return;
+    g+=`<line class="ghostline" x1="${X(p.x).toFixed(1)}" y1="${Y(p.y).toFixed(1)}" x2="${X(p.ghost.x).toFixed(1)}" y2="${Y(p.ghost.y).toFixed(1)}"/>`
+     + `<circle class="ghostdot" cx="${X(p.ghost.x).toFixed(1)}" cy="${Y(p.ghost.y).toFixed(1)}" r="4"/>`;
+  });
+
+  o.pts.forEach((p,i)=>{
+    const r=p.r||6;
+    g+=`<g class="pt" data-i="${i}" tabindex="0" role="img" aria-label="${(p.label||'').replace(/"/g,'')}">
+      <circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${r}" fill="${p.color||'var(--team-1)'}" class="ptdot"/>
+      ${p.label&&r>=6?`<text x="${X(p.x).toFixed(1)}" y="${(Y(p.y)+3).toFixed(1)}" text-anchor="middle" class="ptlab">${p.label}</text>`:''}
+    </g>`;
+  });
+
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="advsvg" role="img" aria-label="${o.aria||'chart'}">
+    ${g}
+    <text class="axname" x="${P.l+iw/2}" y="${H-3}" text-anchor="middle">${o.xLabel||''}</text>
+    <text class="axname" x="12" y="${P.t+ih/2}" text-anchor="middle" transform="rotate(-90 12 ${P.t+ih/2})">${o.yLabel||''}</text>
+  </svg>`;
+
+  host.querySelectorAll('.pt').forEach(el=>{
+    const p=o.pts[+el.dataset.i];
+    const show=ev=>tipShow(p.tip||p.label||'', ev);
+    el.addEventListener('mouseenter',show);
+    el.addEventListener('mousemove',show);
+    el.addEventListener('mouseleave',tipHide);
+    el.addEventListener('focus',e=>{
+      const b=el.getBoundingClientRect();
+      tipShow(p.tip||p.label||'', {clientX:b.left+b.width/2, clientY:b.top});
+    });
+    el.addEventListener('blur',tipHide);
+  });
+}
+
+/* ================= 1. CPOE vs EPA ================= */
+
+function renderAdvQB(){
+  const host=$('#advQB'); if(!host) return;
+  const pack=advHas('qb') && ADV.qb[String(SJ.season)];
+  if(!pack){ host.innerHTML='<div class="empty">No passing data for this season yet.</div>'; return; }
+  const ps=pack.passers.filter(p=>p.cpoe!==null);
+  const pts=ps.map(p=>({
+    x:p.cpoe, y:p.epa, label:p.team, color:TEAMS[p.team]?TEAMS[p.team][0]:'var(--team-1)',
+    r:7, ghost:(p.cpoe_shrunk!==null?{x:p.cpoe_shrunk, y:p.epa_shrunk}:null),
+    tip:`<b>${p.name}</b> <span class="tt-team">${p.team}</span>
+      <table class="tt">
+        <tr><td>Dropbacks</td><td>${p.db}</td></tr>
+        <tr><td>Completions</td><td>${p.cmp}/${p.att}${p.cmp_pct!==null?` (${p.cmp_pct}%)`:''}</td></tr>
+        <tr><td>Yards</td><td>${p.yards.toLocaleString()}</td></tr>
+        <tr><td>TD / INT</td><td>${p.td} / ${p.int}</td></tr>
+        <tr><td>Sacks taken</td><td>${p.sacks}</td></tr>
+        ${p.ay!==null?`<tr><td>Air yards / att</td><td>${p.ay}</td></tr>`:''}
+        <tr class="tt-hr"><td>EPA / dropback</td><td>${sgn(p.epa,3)}</td></tr>
+        <tr><td>CPOE</td><td>${sgn(p.cpoe,1)}%</td></tr>
+        <tr class="tt-dim"><td>Model's estimate</td><td>${sgn(p.epa_shrunk,3)} &middot; ${sgn(p.cpoe_shrunk,1)}%</td></tr>
+      </table>`
+  }));
+  advScatter(host,{
+    pts, height:380,
+    refs:[{x:pack.league.cpoe},{y:pack.league.epa}],
+    xLabel:'completion % over expected', yLabel:'EPA per dropback',
+    xFmt:v=>(v>0?'+':'')+v.toFixed(0), yFmt:v=>(v>0?'+':'')+v.toFixed(2),
+    aria:'Completion percentage over expected against EPA per dropback'
+  });
+  $('#advQBNote').innerHTML =
+    `Each team's main passer &mdash; whoever took the most dropbacks &mdash; so there are
+     ${ps.length} dots and no arbitrary attempt cut-off. The solid dot is what he has actually
+     done. The hollow dot joined to it is what <em>the model believes</em>: the same number
+     shrunk toward league average with a prior worth ${pack.prior_db} dropbacks. After
+     ${pack.weeks.length} week${pack.weeks.length===1?'':'s'} those leashes are long, because
+     ${Math.round(100*pack.prior_db/(pack.prior_db+ps.reduce((a,p)=>a+p.db,0)/ps.length))}% of what
+     you're looking at is still prior. Watch them shorten as the season runs.`;
+}
+
+/* ================= 2. pass rate over expected ================= */
+
+function renderAdvPROE(){
+  const host=$('#advPROE'); if(!host) return;
+  const rows=advHas('proe') && (ADV.proe[String(statsYear)] || ADV.proe[String(SJ.season)]);
+  if(!rows){ host.innerHTML='<div class="empty">No play-calling data for this season yet.</div>'; return; }
+  const pts=rows.map(t=>({
+    x:t.proe, y:t.success, label:t.team, color:TEAMS[t.team]?TEAMS[t.team][0]:'var(--team-1)', r:7,
+    tip:`<b>${TEAM_NAME[t.team]||t.team}</b> <span class="tt-team">${t.team}</span>
+      <table class="tt">
+        <tr><td>Pass rate over expected</td><td>${sgn(t.proe,1)}%</td></tr>
+        <tr><td>Success rate</td><td>${(t.success*100).toFixed(1)}%</td></tr>
+        <tr><td>EPA per play</td><td>${sgn(t.epa,3)}</td></tr>
+        <tr><td>Plays</td><td>${t.plays.toLocaleString()}</td></tr>
+        <tr><td>Dropbacks</td><td>${t.dropbacks.toLocaleString()}</td></tr>
+      </table>`
+  }));
+  advScatter(host,{
+    pts, height:360, refs:[{x:0}],
+    xLabel:'pass rate over expected', yLabel:'success rate',
+    xFmt:v=>(v>0?'+':'')+v.toFixed(0)+'%', yFmt:v=>(v*100).toFixed(0)+'%',
+    aria:'Pass rate over expected against offensive success rate'
+  });
+}
+
+/* ================= 3. leverage ================= */
+
+function renderAdvLev(){
+  const host=$('#advLev'); if(!host) return;
+  const rows=advHas('leverage') && ADV.leverage[String(SJ.season)];
+  if(!rows){ host.innerHTML='<div class="empty">No leverage data for this season yet.</div>'; return; }
+  const lo=Math.min(...rows.map(r=>Math.min(r.raw,r.clutch)));
+  const hi=Math.max(...rows.map(r=>Math.max(r.raw,r.clutch)));
+  const pad=(hi-lo)*0.08||0.05;
+  const pts=rows.map(r=>({
+    x:r.raw, y:r.clutch, label:r.team, color:TEAMS[r.team]?TEAMS[r.team][0]:'var(--team-1)', r:7,
+    tip:`<b>${r.name}</b> <span class="tt-team">${r.team}</span>
+      <table class="tt">
+        <tr><td>Dropbacks</td><td>${r.db}</td></tr>
+        <tr><td>EPA per dropback</td><td>${sgn(r.raw,3)}</td></tr>
+        <tr><td>Weighted by leverage</td><td>${sgn(r.clutch,3)}</td></tr>
+        <tr class="tt-hr"><td>Difference</td><td>${sgn(r.gap,3)}</td></tr>
+        <tr class="tt-dim"><td>Average leverage faced</td><td>${(r.lev_share*100).toFixed(0)}%</td></tr>
+      </table>`
+  }));
+  advScatter(host,{
+    pts, height:360, xDomain:[lo-pad,hi+pad], yDomain:[lo-pad,hi+pad], refs:[{diag:true}],
+    xLabel:'EPA per dropback, every snap', yLabel:'EPA weighted by leverage',
+    xFmt:v=>(v>0?'+':'')+v.toFixed(2), yFmt:v=>(v>0?'+':'')+v.toFixed(2),
+    aria:'Raw EPA against leverage-weighted EPA'
+  });
+  const p=ADV.leverage_persistence;
+  if(p && $('#advLevNote')){
+    $('#advLevNote').innerHTML =
+      `Above the diagonal means a passer was better when the game was still in doubt; below it
+       means his raw number is propped up by snaps that no longer mattered.
+       <b>Read it as description, not a trait.</b> Across
+       ${p.pairs.length} season pairs the size of this gap carries over from one year to the next
+       at r = <b>${p.mean_gap_r>=0?'+':''}${p.mean_gap_r.toFixed(2)}</b> &mdash; nothing &mdash;
+       while plain EPA carries over at r = <b>${p.mean_raw_r>=0?'+':''}${p.mean_raw_r.toFixed(2)}</b>.
+       Whatever this chart is measuring, it is not a quality a quarterback keeps.`;
+  }
+}
+
+/* ================= 4. is the market biased? ================= */
+
+function renderAdvMarket(){
+  const host=$('#advMarket'); if(!host) return;
+  const m=advHas('market') && ADV.market;
+  if(!m){ host.innerHTML='<div class="empty">No market data available.</div>'; return; }
+  const rows=[];
+  m.groups.forEach(g=>{ rows.push({head:g.label}); g.bins.forEach(b=>rows.push(b)); });
+
+  const W=560, rowH=21, padL=136, padR=16, padT=22;
+  const H=padT+rows.length*rowH+26;
+  const iw=W-padL-padR;
+  const lim=Math.max(4, ...rows.filter(r=>!r.head).map(r=>Math.abs(r.mean)+2*r.se));
+  const X=v=>padL+((v+lim)/(2*lim))*iw;
+
+  let g='';
+  [-4,-2,0,2,4].filter(t=>Math.abs(t)<=lim).forEach(t=>{
+    g+=`<line class="${t===0?'axzero':'axg'}" x1="${X(t).toFixed(1)}" y1="${padT-6}" x2="${X(t).toFixed(1)}" y2="${padT+rows.length*rowH}"/>`
+     + `<text class="axt" x="${X(t).toFixed(1)}" y="${padT+rows.length*rowH+15}" text-anchor="middle">${t>0?'+':''}${t}</text>`;
+  });
+
+  rows.forEach((r,i)=>{
+    const y=padT+i*rowH+rowH/2;
+    if(r.head){
+      g+=`<text class="grouplab" x="6" y="${(y+4).toFixed(1)}">${r.head}</text>`; return;
+    }
+    const sig=Math.abs(r.t)>2;
+    g+=`<text class="binlab" x="${padL-9}" y="${(y+3.5).toFixed(1)}" text-anchor="end">${r.bin}</text>`
+     + `<line class="errbar" x1="${X(r.mean-2*r.se).toFixed(1)}" y1="${y.toFixed(1)}" x2="${X(r.mean+2*r.se).toFixed(1)}" y2="${y.toFixed(1)}"/>`
+     + `<g class="pt" data-i="${i}" tabindex="0"><circle cx="${X(r.mean).toFixed(1)}" cy="${y.toFixed(1)}" r="5"
+          class="mkdot ${sig?'sig':''}"/></g>`;
+  });
+
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="advsvg" role="img"
+      aria-label="Closing line residual by game type, with confidence intervals">${g}
+    <text class="axname" x="${padL+iw/2}" y="${H-3}" text-anchor="middle">points the home team beat its closing line by</text>
+  </svg>`;
+
+  host.querySelectorAll('.pt').forEach(el=>{
+    const r=rows[+el.dataset.i];
+    const show=ev=>tipShow(`<b>${r.bin}</b>
+      <table class="tt">
+        <tr><td>Games</td><td>${r.n.toLocaleString()}</td></tr>
+        <tr><td>Average miss</td><td>${sgn(r.mean,2)} pts</td></tr>
+        <tr><td>Standard error</td><td>&plusmn;${r.se.toFixed(2)}</td></tr>
+        <tr class="tt-hr"><td>t statistic</td><td>${sgn(r.t,2)}</td></tr>
+        <tr class="tt-dim"><td colspan="2">${Math.abs(r.t)>2?'Significant at the 5% level':'Indistinguishable from zero'}</td></tr>
+      </table>`, ev);
+    el.addEventListener('mouseenter',show); el.addEventListener('mousemove',show);
+    el.addEventListener('mouseleave',tipHide);
+    el.addEventListener('focus',e=>{const b=el.getBoundingClientRect();
+      tipShow(`<b>${r.bin}</b> ${sgn(r.mean,2)} pts, t=${sgn(r.t,2)}`,{clientX:b.left,clientY:b.top});});
+    el.addEventListener('blur',tipHide);
+  });
+
+  if($('#advMarketNote')){
+    const b=m.biggest_t;
+    $('#advMarketNote').innerHTML =
+      `Every closing line from ${m.seasons[0]} to ${m.seasons[1]} &mdash;
+       <b>${m.n_games.toLocaleString()}</b> games &mdash; sorted into the situations people
+       claim the market misprices. A dot is the average amount the home team beat its line by;
+       the bar is two standard errors. If the market had a blind spot, some bar would clear zero.
+       <b>None of them does.</b> The largest is ${b.bin} at ${sgn(b.mean,2)} points, t = ${sgn(b.t,2)},
+       which with ${m.groups.reduce((a,g)=>a+g.bins.length,0)} bins tested is roughly what you would
+       expect from chance alone. Overall the line misses by ${sgn(m.overall,2)} points on a spread
+       of ${m.sd}. This is what we are up against, and it is the most useful chart on this page.`;
+  }
+}
+
+/* ================= 5. does beating the line persist? ================= */
+
+function renderAdvLineFit(){
+  const host=$('#advLineFit'); if(!host) return;
+  const lf=advHas('linefit') && ADV.linefit;
+  if(!lf){ host.innerHTML='<div class="empty">No data available.</div>'; return; }
+  const pts=lf.points.map(p=>({
+    x:p.h1, y:p.h2, r:4, color:TEAMS[p.team]?TEAMS[p.team][0]:'var(--team-1)',
+    tip:`<b>${p.team}</b> <span class="tt-team">${p.season}</span>
+      <table class="tt">
+        <tr><td>Weeks 1&ndash;9 vs the line</td><td>${sgn(p.h1,2)} pts/gm</td></tr>
+        <tr><td>Weeks 10+ vs the line</td><td>${sgn(p.h2,2)} pts/gm</td></tr>
+      </table>`
+  }));
+  advScatter(host,{
+    pts, height:340, refs:[{x:0},{y:0}],
+    xLabel:'first half of the season, points vs the line',
+    yLabel:'second half',
+    xFmt:v=>(v>0?'+':'')+v.toFixed(0), yFmt:v=>(v>0?'+':'')+v.toFixed(0),
+    aria:'First-half against second-half performance versus the closing line'
+  });
+  if($('#advLineFitNote')){
+    $('#advLineFitNote').innerHTML =
+      `One dot per team per season, ${lf.seasons[0]}&ndash;${lf.seasons[1]}. Each axis is that
+       team's average points versus its closing line &mdash; weeks 1&ndash;9 across, weeks 10 and
+       later up. Every year some team covers most of its first half and gets called a value play
+       for the run-in.
+       The correlation between the two halves is r =
+       <b>${lf.mean_r>=0?'+':''}${lf.mean_r.toFixed(2)}</b>, and from one season to the next it is
+       <b>${lf.yoy_r>=0?'+':''}${lf.yoy_r.toFixed(2)}</b>. A cloud with no tilt. Beating the line
+       is something that happened to a team, not something it does.`;
+  }
+}
+
+/* ================= 6. the model's own opinion, over time ================= */
+
+let trajPick=null;
+function renderAdvTraj(){
+  const host=$('#advTraj'); if(!host) return;
+  const k=advHas('kalman') && ADV.kalman;
+  if(!k){ host.innerHTML='<div class="empty">No trajectory available.</div>'; return; }
+  const teams=Object.keys(k.teams).sort();
+  const n=k.points.length;
+  const W=620, H=360, P={l:42,r:14,t:14,b:40};
+  const iw=W-P.l-P.r, ih=H-P.t-P.b;
+  const all=[].concat(...teams.map(t=>k.teams[t]));
+  const [y0,y1]=padRange(all,0.06);
+  const X=i=>P.l+(n>1?(i/(n-1))*iw:iw/2);
+  const Y=v=>P.t+ih-((v-y0)/((y1-y0)||1))*ih;
+
+  let g='';
+  niceTicks(y0,y1,5).forEach(t=>{
+    g+=`<line class="${Math.abs(t)<1e-9?'axzero':'axg'}" x1="${P.l}" y1="${Y(t).toFixed(1)}" x2="${P.l+iw}" y2="${Y(t).toFixed(1)}"/>`
+     + `<text class="axt" x="${P.l-7}" y="${(Y(t)+3.5).toFixed(1)}" text-anchor="end">${t>0?'+':''}${t.toFixed(0)}</text>`;
+  });
+  // a season boundary is worth marking: ratings regress toward the mean across it
+  k.points.forEach((p,i)=>{
+    if(i>0 && p.season!==k.points[i-1].season){
+      g+=`<line class="axref" x1="${X(i).toFixed(1)}" y1="${P.t}" x2="${X(i).toFixed(1)}" y2="${P.t+ih}"/>`
+       + `<text class="axt" x="${X(i).toFixed(1)}" y="${P.t-3}" text-anchor="middle">${p.season}</text>`;
+    }
+  });
+  [0, Math.floor(n/2), n-1].filter((v,i,a)=>a.indexOf(v)===i).forEach(i=>{
+    const p=k.points[i];
+    g+=`<text class="axt" x="${X(i).toFixed(1)}" y="${P.t+ih+15}" text-anchor="middle">${p.season} wk${p.week}</text>`;
+  });
+
+  const path=t=>k.teams[t].map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+  teams.forEach(t=>{
+    const on=trajPick===t;
+    g+=`<path class="trline ${on?'on':''} ${trajPick&&!on?'off':''}" d="${path(t)}"
+         stroke="${on?(TEAMS[t]?TEAMS[t][0]:'var(--team-1)'):'currentColor'}" data-team="${t}"/>`;
+  });
+  if(trajPick && k.teams[trajPick]){
+    const v=k.teams[trajPick], last=v[v.length-1];
+    g+=`<circle cx="${X(n-1).toFixed(1)}" cy="${Y(last).toFixed(1)}" r="5"
+         fill="${TEAMS[trajPick]?TEAMS[trajPick][0]:'var(--team-1)'}" class="ptdot"/>`;
+  }
+
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" class="advsvg trajsvg" role="img"
+      aria-label="Model team strength by week">${g}
+    <text class="axname" x="12" y="${P.t+ih/2}" text-anchor="middle" transform="rotate(-90 12 ${P.t+ih/2})">rating (points vs average)</text>
+  </svg>`;
+
+  host.querySelectorAll('.trline').forEach(el=>{
+    const t=el.dataset.team;
+    el.addEventListener('mouseenter',ev=>{
+      const v=k.teams[t], last=v[v.length-1], first=v[0];
+      tipShow(`<b>${TEAM_NAME[t]||t}</b> <span class="tt-team">${t}</span>
+        <table class="tt">
+          <tr><td>Rating now</td><td>${sgn(last,2)}</td></tr>
+          <tr><td>${k.points[0].season} week ${k.points[0].week}</td><td>${sgn(first,2)}</td></tr>
+          <tr class="tt-hr"><td>Change</td><td>${sgn(last-first,2)}</td></tr>
+        </table>`, ev);
+    });
+    el.addEventListener('mousemove',ev=>tipShow(advTip().innerHTML, ev));
+    el.addEventListener('mouseleave',tipHide);
+    el.addEventListener('click',()=>{ trajPick = trajPick===t?null:t; renderAdvTraj(); });
+  });
+}
+
+function renderAdvanced(){
+  renderAdvQB(); renderAdvPROE(); renderAdvLev();
+  renderAdvMarket(); renderAdvLineFit(); renderAdvTraj();
+}
+
+(function(){
+  const sel=$('#trajSel'); if(!sel) return;
+  const o0=document.createElement('option'); o0.value=''; o0.textContent='All teams';
+  sel.appendChild(o0);
+  ALLT.slice().sort().forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=(TEAM_NAME[t]||t)+' ('+t+')';
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change',e=>{ trajPick=e.target.value||null; renderAdvTraj(); });
 })();
 
 
