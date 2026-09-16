@@ -413,6 +413,16 @@ table.stand tr.in td{background:var(--surface-2);}
 .advtip table.tt tr.tt-dim td{color:var(--text-3);font-size:11px;font-weight:400;}
 .advnote{font-size:12.5px;color:var(--text-2);line-height:1.6;margin-top:9px;}
 .advnote b{font-family:var(--mono-num);color:var(--text);font-weight:600;}
+.periodchip{
+  font-size:11.5px;color:var(--text-3);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:2px;padding:3px 8px;
+  font-family:var(--mono-num);letter-spacing:.02em;
+}
+.dombar{cursor:default;}
+.dombar.hit{cursor:pointer;}
+.dombar.hit:hover .domtrack{outline:1px solid var(--line-strong);outline-offset:2px;}
+.domteam.tlink{cursor:pointer;}
+.domteam.tlink:hover{text-decoration:underline;}
 .advbar{display:flex;align-items:center;gap:9px;margin-bottom:9px;flex-wrap:wrap;}
 .advbar select{font:inherit;font-size:13px;padding:4px 6px;}
 .advlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text-3);margin-top:7px;}
@@ -938,107 +948,30 @@ body::before{left:0;} body::after{right:0;}
 
 
 <section class="view" id="v-stats">
-  <div class="weekbar">
-    <label for="yrSel" style="font-size:13px;">Season</label>
-    <select id="yrSel"></select>
-    <span class="statsnote" id="statsSample"></span>
-  </div>
+
   <div class="sec" id="secDom">
     <button class="sechead">How badly did they get beat?
-      <small><span class="yrtag">2025</span> &middot; play-level dominance with garbage time removed</small><span class="chev">&#9660;</span></button>
+      <small>play-level dominance with garbage time removed</small><span class="chev">&#9660;</span></button>
     <div class="secbody">
       <div class="weekbar">
+        <label for="domYr" style="font-size:13px;">Season</label>
+        <select id="domYr" class="yrpick"></select>
         <label for="domSel" style="font-size:13px;">Week</label>
         <select id="domSel"></select>
+        <span class="statsnote" id="statsSample"></span>
       </div>
       <div id="domThin"></div>
       <div id="domBody"></div>
     </div>
   </div>
 
-  <div class="sec" id="secQB">
-    <button class="sechead">Where the quarterback throws
-      <small><span class="yrtag">2025</span> &middot; by field zone, against the league baseline</small><span class="chev">&#9660;</span></button>
-    <div class="secbody">
-      <div class="qbpick"><label for="qbSel" style="font-size:13px;">Passer</label><select id="qbSel"></select></div>
-      <div id="qbThin"></div>
-      <div id="qbBody"></div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secCPOE">
-    <button class="sechead">Accuracy against value
-      <small><span class="yrtag">2026</span> &middot; CPOE and EPA for every team's main passer<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div id="advQB"></div>
-      <div class="advlegend">
-        <i><span class="advkey solid"></span>what he has done</i>
-        <i><span class="advkey hollow"></span>what the model believes</i>
-      </div>
-      <div class="advnote" id="advQBNote"></div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secMarket">
-    <button class="sechead">Where is the market wrong?
-      <small>every closing line 2018&ndash;2025, sorted by the excuses people make<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div id="advMarket"></div>
-      <div class="advnote" id="advMarketNote"></div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secLineFit">
-    <button class="sechead">Does beating the line stick?
-      <small>first half of a season against the second, every team, eight years<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div id="advLineFit"></div>
-      <div class="advnote" id="advLineFitNote"></div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secPROE">
-    <button class="sechead">Who passes more than the situation asks?
-      <small><span class="yrtag">2026</span> &middot; pass rate over expected against success<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div id="advPROE"></div>
-      <div class="advnote">Pass rate over expected strips out down, distance, score and clock, so what's
-        left is what the coach <em>chose</em>. Right of the line is pass-happier than the situation called
-        for; up the axis is more successful. It is a map of philosophy, not of talent.</div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secLev">
-    <button class="sechead">Who plays when it is still a game?
-      <small><span class="yrtag">2026</span> &middot; EPA weighted by how much the game was in doubt<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div id="advLev"></div>
-      <div class="advnote" id="advLevNote"></div>
-    </div>
-  </div>
-
-  <div class="sec closed" id="secTraj">
-    <button class="sechead">The model changing its mind
-      <small>team strength, week by week, from the Kalman filter itself<span class="chev">&#9660;</span></small></button>
-    <div class="secbody">
-      <div class="advbar">
-        <label for="trajSel" style="font-size:13px;">Highlight</label>
-        <select id="trajSel"></select>
-      </div>
-      <div id="advTraj"></div>
-      <div class="advnote">This is the model's internal state, not a summary of results: a rating of +4
-        means the filter expects that team to beat an average one by four points on a neutral field.
-        It moves on <em>how</em> a team won, not whether it did, and it regresses toward the middle
-        between seasons &mdash; the dashed line is where one season ends and the next begins. Click a
-        line to pin it.</div>
-    </div>
-  </div>
-
   <div class="sec" id="secQuad">
     <button class="sechead">Offense against defense
-      <small><span class="yrtag">2025</span> &middot; opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
+      <small>opponent-adjusted EPA per play</small><span class="chev">&#9660;</span></button>
     <div class="secbody">
       <div class="weekbar">
+        <label for="quadYr" style="font-size:13px;">Season</label>
+        <select id="quadYr" class="yrpick"></select>
         <div class="seg" role="group">
           <button data-q="all" aria-pressed="true">Overall</button>
           <button data-q="pass" aria-pressed="false">Passing</button>
@@ -1049,6 +982,105 @@ body::before{left:0;} body::after{right:0;}
       <div class="quadwrap" id="quadBody"></div>
     </div>
   </div>
+
+  <div class="sec" id="secTraj">
+    <button class="sechead">The model changing its mind
+      <small>team strength week by week, from the Kalman filter itself</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <span class="periodchip" id="trajPeriod">all seasons</span>
+        <label for="trajSel" style="font-size:13px;">Highlight</label>
+        <select id="trajSel"></select>
+      </div>
+      <div id="advTraj"></div>
+      <div class="advnote">This is the model's internal state, not a summary of results: a rating of +4
+        means the filter expects that team to beat an average one by four points on a neutral field.
+        It moves on <em>how</em> a team won, not whether it did, and it regresses toward the middle
+        between seasons &mdash; the dashed line is where one season ends and the next begins. Click a
+        line to pin it. This chart spans every season it has, so the season picker above doesn't apply.</div>
+    </div>
+  </div>
+
+  <div class="sec" id="secLev">
+    <button class="sechead">Who plays when it is still a game?
+      <small>EPA weighted by how much the game was in doubt</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <label for="levYr" style="font-size:13px;">Season</label>
+        <select id="levYr" class="yrpick"></select>
+      </div>
+      <div id="advLev"></div>
+      <div class="advnote" id="advLevNote"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secQB">
+    <button class="sechead">Where the quarterback throws
+      <small>by field zone, against the league baseline</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <label for="qbYr" style="font-size:13px;">Season</label>
+        <select id="qbYr" class="yrpick"></select>
+        <label for="qbSel" style="font-size:13px;">Passer</label>
+        <select id="qbSel"></select>
+      </div>
+      <div id="qbThin"></div>
+      <div id="qbBody"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secCPOE">
+    <button class="sechead">Accuracy against value
+      <small>CPOE and EPA for every team's main passer</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <label for="cpoeYr" style="font-size:13px;">Season</label>
+        <select id="cpoeYr" class="yrpick"></select>
+      </div>
+      <div id="advQB"></div>
+      <div class="advlegend">
+        <i><span class="advkey solid"></span>what he has done</i>
+        <i><span class="advkey hollow"></span>what the model believes</i>
+      </div>
+      <div class="advnote" id="advQBNote"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secPROE">
+    <button class="sechead">Who passes more than the situation asks?
+      <small>pass rate over expected against success</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar">
+        <label for="proeYr" style="font-size:13px;">Season</label>
+        <select id="proeYr" class="yrpick"></select>
+      </div>
+      <div id="advPROE"></div>
+      <div class="advnote">Pass rate over expected strips out down, distance, score and clock, so what's
+        left is what the coach <em>chose</em>. Right of the line is pass-happier than the situation called
+        for; up the axis is more successful. It is a map of philosophy, not of talent.</div>
+    </div>
+  </div>
+
+  <div class="sec" id="secMarket">
+    <button class="sechead">Where is the market wrong?
+      <small>every closing line, sorted by the excuses people make</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar"><span class="periodchip" id="marketPeriod"></span></div>
+      <div id="advMarket"></div>
+      <div class="advnote" id="advMarketNote"></div>
+    </div>
+  </div>
+
+  <div class="sec" id="secLineFit">
+    <button class="sechead">Does beating the line stick?
+      <small>first half of a season against the second, every team</small><span class="chev">&#9660;</span></button>
+    <div class="secbody">
+      <div class="weekbar"><span class="periodchip" id="lineFitPeriod"></span></div>
+      <div id="advLineFit"></div>
+      <div class="advnote" id="advLineFitNote"></div>
+    </div>
+  </div>
+
 </section>
 
 <div class="shead"><h2>Appearance</h2></div>
@@ -2403,7 +2435,15 @@ function thinNote(nGames){
 
 /** year label + sample line, kept in step with the selected season */
 function syncStatsChrome(){
-  document.querySelectorAll('#v-stats .yrtag').forEach(e=>e.textContent=statsYear);
+  // fixed-window sections say their own span so the season pickers can't be
+  // mistaken for controlling them
+  const chip=(sel,txt)=>{ const e=$(sel); if(e) e.textContent=txt; };
+  if(advHas('market'))  chip('#marketPeriod',   ADV.market.seasons.join('\u2013'));
+  if(advHas('linefit')) chip('#lineFitPeriod',  ADV.linefit.seasons.join('\u2013'));
+  if(advHas('kalman') && ADV.kalman.points.length){
+    const p=ADV.kalman.points, a=p[0], b=p[p.length-1];
+    chip('#trajPeriod', a.season===b.season ? String(a.season) : a.season+'\u2013'+b.season);
+  }
   const s=statsFor(), wk=statsWeeks().length;
   // legacy flat payloads carry no counts; derive them so the line still reads right
   if(s.n_games===undefined) s.n_games=(s.games||[]).length;
@@ -2432,13 +2472,25 @@ function renderDom(){
       const frac=g.epa_marg/MAX, w=Math.abs(frac)*50, left=frac>0?50:50-w;
       const win=g.epa_marg>0?g.home:g.away;
       const tick=50+(g.score_marg/MAXS)*50;
-      return `<div class="dombar">
-        <div class="domteam">${g.away}</div>
-        <div class="domtrack" title="${g.away} at ${g.home}">
+      const sj=SEASON.games.find(x=>x.id===g.id);
+      const agree=(g.epa_marg>0)===(g.score_marg>0);
+      const tip=`<b>${g.away} at ${g.home}</b>${sj?` <span class="tt-team">week ${g.wk}</span>`:''}
+        <table class="tt">
+          <tr><td>Final</td><td>${sj?`${g.away} ${sj.as_}&ndash;${sj.hs} ${g.home}`:`${g.score_marg>0?g.home:g.away} by ${Math.abs(g.score_marg)}`}</td></tr>
+          <tr><td>EPA per play</td><td>${g.epa_marg>0?g.home:g.away} +${Math.abs(g.epa_marg).toFixed(3)}</td></tr>
+          <tr><td>Home control</td><td>${(g.ctrl*100).toFixed(0)}% of the game</td></tr>
+          <tr><td>Plays counted</td><td>${g.live_n} of ${g.all_n}</td></tr>
+          ${sj?`<tr class="tt-hr"><td>Model said</td><td>${sj.margin>0?sj.home:sj.away} by ${Math.abs(sj.margin).toFixed(1)}</td></tr>`:''}
+          ${sj&&sj.spread!==null&&sj.spread!==undefined?`<tr><td>Closing line</td><td>${sj.spread>0?sj.home:sj.away} by ${Math.abs(sj.spread).toFixed(1)}</td></tr>`:''}
+          <tr class="tt-dim"><td colspan="2">${agree?'Scoreboard and play-by-play agree':'The scoreboard flattered '+(g.score_marg>0?g.home:g.away)}</td></tr>
+        </table>`;
+      return `<div class="dombar hit" data-tip="${encodeURIComponent(tip)}">
+        <div class="domteam tlink" data-team="${g.away}" role="button" tabindex="0">${g.away}</div>
+        <div class="domtrack">
           <div class="domfill" style="left:${left}%;width:${w}%;background:${TEAMS[win][0]}"></div>
           <div class="domtick" style="left:${Math.max(0,Math.min(100,tick))}%"></div>
         </div>
-        <div class="domteam r">${g.home}</div>
+        <div class="domteam r tlink" data-team="${g.home}" role="button" tabindex="0">${g.home}</div>
       </div>
       <div class="domlabels" style="margin:-4px 0 6px;">
         <span>${g.epa_marg>0?g.home:g.away} +${Math.abs(g.epa_marg).toFixed(3)} EPA/play</span>
@@ -2459,9 +2511,21 @@ function renderQuad(){
   // defence: lower is better, so invert the axis (good defence sits high)
   const py=v=>30+((v-ymin)/(ymax-ymin||1))*300;
   const mx=px((xmin+xmax)/2), my=py((ymin+ymax)/2);
+  const SP=(statsFor().teams)||{};
   const pts=ts.map(t=>{
     const x=px(QUAD[t][ok]), y=py(QUAD[t][dk]);
-    return `<g data-team="${t}" role="button" tabindex="0" style="cursor:pointer"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
+    const sp=SP[t], R=sp&&sp.rank||{}, of=sp&&sp.rank_of||32;
+    const qtip=`<b>${TEAM_NAME[t]||t}</b> <span class="tt-team">${t}</span>
+      <table class="tt">
+        <tr><td>Offense, ${key==='all'?'overall':key+'ing'}</td><td>${sgn(QUAD[t][ok],3)}</td></tr>
+        <tr><td>Defense allowed</td><td>${sgn(QUAD[t][dk],3)}</td></tr>
+        ${sp?`<tr class="tt-hr"><td>Offense rank</td><td>${R.off_epa?R.off_epa+' of '+of:'&mdash;'}</td></tr>
+        <tr><td>Defense rank</td><td>${R.def_epa?R.def_epa+' of '+of:'&mdash;'}</td></tr>
+        <tr><td>Points per drive</td><td>${sp.off.pts_per_drive!==null?sp.off.pts_per_drive.toFixed(2):'&mdash;'}</td></tr>
+        <tr><td>Allowed per drive</td><td>${sp['def'].pts_per_drive!==null?sp['def'].pts_per_drive.toFixed(2):'&mdash;'}</td></tr>`:''}
+        <tr class="tt-dim"><td colspan="2">Click for the team page</td></tr>
+      </table>`;
+    return `<g data-team="${t}" data-tip="${encodeURIComponent(qtip)}" role="button" tabindex="0" style="cursor:pointer"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${TEAMS[t][0]}" opacity=".92"/>
       <text x="${x.toFixed(1)}" y="${(y+3.5).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#fff">${t}</text></g>`;
   }).join('');
   $('#quadBody').innerHTML=`
@@ -2483,12 +2547,23 @@ function renderQuad(){
   document.querySelectorAll('.sechead').forEach(b=>{
     b.addEventListener('click',()=>b.closest('.sec').classList.toggle('closed'));
   });
-  // season picker drives all three sections
-  const ys=$('#yrSel');
-  STATS_YEARS.forEach(y=>{
-    const o=document.createElement('option');o.value=y;o.textContent=y;ys.appendChild(o);
+  /* One season, several controls. Each section that can vary by season carries its
+     own picker sitting next to the chart it governs; the sections with a fixed
+     window (the trajectory, and the two market charts) carry a static period chip
+     instead, so nothing implies a control it doesn't obey. All the pickers read and
+     write the same statsYear, so they can never disagree with each other. */
+  const yearPicks=[...document.querySelectorAll('#v-stats .yrpick')];
+  yearPicks.forEach(sel=>{
+    STATS_YEARS.forEach(y=>{
+      const o=document.createElement('option');o.value=y;o.textContent=y;sel.appendChild(o);
+    });
+    sel.value=statsYear;
+    sel.addEventListener('change',e=>{
+      statsYear=parseInt(e.target.value,10);
+      yearPicks.forEach(o=>{ o.value=statsYear; });
+      fillWeeks(); fillPassers(); renderStats();
+    });
   });
-  ys.value=statsYear;
 
   const s=$('#domSel');
   function fillWeeks(){
@@ -2520,10 +2595,6 @@ function renderQuad(){
     }
   }
   fillWeeks(); fillPassers();
-  ys.addEventListener('change',e=>{
-    statsYear=parseInt(e.target.value,10);
-    fillWeeks(); fillPassers(); renderStats();
-  });
   s.addEventListener('change',e=>{domWeek=parseInt(e.target.value,10);renderDom();});
   document.querySelectorAll('#v-stats .seg button[data-q]').forEach(b=>{
     b.addEventListener('click',()=>{
@@ -3443,7 +3514,7 @@ function advScatter(host, o){
 
 function renderAdvQB(){
   const host=$('#advQB'); if(!host) return;
-  const pack=advHas('qb') && ADV.qb[String(SJ.season)];
+  const pack=advHas('qb') && (ADV.qb[String(statsYear)] || ADV.qb[String(SJ.season)]);
   if(!pack){ host.innerHTML='<div class="empty">No passing data for this season yet.</div>'; return; }
   const ps=pack.passers.filter(p=>p.cpoe!==null);
   const pts=ps.map(p=>({
@@ -3508,7 +3579,7 @@ function renderAdvPROE(){
 
 function renderAdvLev(){
   const host=$('#advLev'); if(!host) return;
-  const rows=advHas('leverage') && ADV.leverage[String(SJ.season)];
+  const rows=advHas('leverage') && (ADV.leverage[String(statsYear)] || ADV.leverage[String(SJ.season)]);
   if(!rows){ host.innerHTML='<div class="empty">No leverage data for this season yet.</div>'; return; }
   const lo=Math.min(...rows.map(r=>Math.min(r.raw,r.clutch)));
   const hi=Math.max(...rows.map(r=>Math.max(r.raw,r.clutch)));
@@ -3712,6 +3783,20 @@ function renderAdvTraj(){
     el.addEventListener('click',()=>{ trajPick = trajPick===t?null:t; renderAdvTraj(); });
   });
 }
+
+/* Anything with a data-tip attribute gets the shared tooltip. Lets the older
+   charts opt in without each growing its own listener bookkeeping. */
+(function(){
+  const find=e=>e.target.closest&&e.target.closest('[data-tip]');
+  document.addEventListener('mouseover',e=>{
+    const el=find(e); if(!el) return;
+    tipShow(decodeURIComponent(el.dataset.tip), e);
+  });
+  document.addEventListener('mousemove',e=>{
+    const el=find(e); if(el) tipShow(decodeURIComponent(el.dataset.tip), e); else tipHide();
+  });
+  document.addEventListener('mouseleave',tipHide, true);
+})();
 
 function renderAdvanced(){
   renderAdvQB(); renderAdvPROE(); renderAdvLev();
