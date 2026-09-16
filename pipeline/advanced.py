@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
+from . import rankings as RK
 from .config import (CACHE, STATIC, SEASON, ALIAS, SCHEMA_VERSION, QB_PRIOR_DB,
                      STATS_SEASONS)
 
@@ -405,6 +406,10 @@ def build(games, snaps, teams):
     if lf:
         payload['linefit'] = lf
         print(f"    linefit: split-half r={lf['mean_r']:+.2f}, year-over-year r={lf['yoy_r']:+.2f}")
+
+    rk = RK.build(snaps, teams)
+    if rk:
+        payload['rankings'] = rk
 
     tr = trajectory(snaps, teams)
     if tr:
