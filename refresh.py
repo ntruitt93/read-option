@@ -16,10 +16,20 @@ import pandas as pd
 
 from pipeline.config import CACHE, DATA, SEASON, HIST_START, ALIAS, STADIUM, STATS_SEASONS
 from pipeline import fetch, features as F, predict as P
-from pipeline import stats as S, qbchart as Q
+from pipeline import stats as S, qbchart as Q, advanced as A
 
 FULL  = '--full'  in sys.argv
 CHECK = '--check' in sys.argv
+
+
+def played_frame(games):
+    """Completed regular-season games, aliased and ordered — the Kalman's input."""
+    g = games[(games.game_type=='REG') & games.result.notna() &
+              games.season.between(HIST_START, SEASON)].copy()
+    g['home_team']=g.home_team.replace(ALIAS); g['away_team']=g.away_team.replace(ALIAS)
+    teams=[t for t in sorted(set(g.home_team)|set(g.away_team)) if t in STADIUM]
+    g=g[g.home_team.isin(teams)&g.away_team.isin(teams)]
+    return g.sort_values(['season','week','game_id']).reset_index(drop=True), teams
 
 
 def main():
@@ -44,12 +54,7 @@ def main():
     else:
         print("\n[3/6] reusing cached history; refreshing ratings")
         hist = pd.read_parquet(hist_path)
-        g = games[(games.game_type=='REG') & games.result.notna() &
-                  games.season.between(HIST_START, SEASON)].copy()
-        g['home_team']=g.home_team.replace(ALIAS); g['away_team']=g.away_team.replace(ALIAS)
-        teams=[t for t in sorted(set(g.home_team)|set(g.away_team)) if t in STADIUM]
-        g=g[g.home_team.isin(teams)&g.away_team.isin(teams)]
-        g=g.sort_values(['season','week','game_id']).reset_index(drop=True)
+        g, teams = played_frame(games)
         ratings, hfa, _ = F.kalman(g, teams)
         qbtl = F.qb_timeline(tg)
     print(f"    history {len(hist):,} games | {len(teams)} teams")
@@ -62,6 +67,14 @@ def main():
     print("\n[5/6] season stats")
     stats_payload = S.build(STATS_SEASONS, games, tg)
     qb_payload    = Q.build(STATS_SEASONS)
+
+    # a second Kalman pass purely to record the weekly state for the trajectory
+    # chart; runs regardless of which history branch was taken above so the line
+    # is the same either way
+    snaps = {}
+    gk, tk = played_frame(games)
+    F.kalman(gk, tk, snap=snaps)
+    adv_payload = A.build(games, snaps, tk)
 
     # --- validation gate: refuse to publish nonsense ---
     problems=[]
@@ -84,6 +97,8 @@ def main():
         played=info['played'], results=n_res, sigma=round(sigma,2)), indent=1))
     print(f"    season.json  {n_games} games")
     print(f"    results.json {n_res} final scores")
+    _, adv_size = A.write(adv_payload)
+    print(f"    advanced.json {adv_size/1024:.1f} KB")
     for payload, mod, label in ((stats_payload, S, 'stats.json'), (qb_payload, Q, 'qb.json')):
         _, size = mod.write(payload)
         print(f"    {label:12s} {'/'.join(sorted(payload['seasons']))}  {size/1024:.1f} KB")
