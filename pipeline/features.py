@@ -112,8 +112,13 @@ def personnel(years):
     return L
 
 
-def kalman(played, teams):
-    """State-space team strength. Returns final ratings, per-stadium HFA, and per-game preds."""
+def kalman(played, teams, snap=None):
+    """State-space team strength. Returns final ratings, per-stadium HFA, and per-game preds.
+
+    Pass `snap` as a dict to also record the rating vector at the end of every
+    (season, week) processed — the trajectory chart reads it. Purely additive:
+    when snap is None this behaves exactly as before.
+    """
     TIDX={t:i for i,t in enumerate(teams)}; N=len(teams)
     K=KALMAN; x=np.zeros(N); P=np.eye(N)*K['p0']; cur=None; preds=[]
     for r in played.itertuples():
@@ -125,6 +130,8 @@ def kalman(played, teams):
         S=P[h,h]+P[a,a]-2*P[h,a]+K['R']
         Hv=np.zeros(N); Hv[h]=1; Hv[a]=-1
         Kg=(P@Hv)/S; x=x+Kg*(r.result-K['hfa']-pred); P=P-np.outer(Kg,Hv@P); x-=x.mean()
+        # last write for a week wins, so each key holds that week's closing state
+        if snap is not None: snap[(int(r.season), int(r.week))]=x.copy()
     if cur is not None and cur < SEASON: x=x*K['regress']
     played=played.assign(kal_pred=preds)
     hfa={}
