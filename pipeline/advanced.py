@@ -24,7 +24,8 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from .config import CACHE, STATIC, SEASON, ALIAS, SCHEMA_VERSION, QB_PRIOR_DB
+from .config import (CACHE, STATIC, SEASON, ALIAS, SCHEMA_VERSION, QB_PRIOR_DB,
+                     STATS_SEASONS)
 
 warnings.filterwarnings('ignore')
 
@@ -361,22 +362,32 @@ def build(games, snaps, teams):
         generated=datetime.now(timezone.utc).isoformat(timespec='seconds'),
         current=SEASON)
 
-    qb = quarterbacks(SEASON)
-    if qb:
-        payload['qb'] = {str(SEASON): qb}
-        print(f"    qb: {len(qb['passers'])} main passers, weeks {qb['weeks']}")
+    # both charts are season-pickable, so build every season the Stats tab offers
+    qbs = {}
+    for y in STATS_SEASONS:
+        q = quarterbacks(y)
+        if q:
+            qbs[str(y)] = q
+    if qbs:
+        payload['qb'] = qbs
+        print("    qb: " + ", ".join(f"{k} ({len(v['passers'])} passers)" for k, v in qbs.items()))
 
-    lev = leverage(SEASON)
-    if lev:
-        payload['leverage'] = {str(SEASON): lev}
+    levs = {}
+    for y in STATS_SEASONS:
+        l = leverage(y)
+        if l:
+            levs[str(y)] = l
+    if levs:
+        payload['leverage'] = levs
         pers = leverage_persistence(range(SEASON - 5, SEASON))
         if pers:
             payload['leverage_persistence'] = pers
-            print(f"    leverage: {len(lev)} passers | gap carries over at "
-                  f"r={pers['mean_gap_r']:+.2f} vs raw EPA r={pers['mean_raw_r']:+.2f}")
+            print("    leverage: " + ", ".join(f"{k} ({len(v)})" for k, v in levs.items())
+                  + f" | gap carries over at r={pers['mean_gap_r']:+.2f} "
+                    f"vs raw EPA r={pers['mean_raw_r']:+.2f}")
 
     pr = {}
-    for y in (SEASON - 1, SEASON):
+    for y in STATS_SEASONS:
         p = proe(y)
         if p:
             pr[str(y)] = p
