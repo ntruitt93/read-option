@@ -442,6 +442,14 @@ table.stand tr.in td{background:var(--surface-2);}
 .rkfill.pos{background:var(--good);}
 .rkfill.neg{background:var(--bad);}
 .rkzero{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line-strong);}
+.stand th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
+.stand th.sortable:hover{color:var(--text);}
+.stand th.sortable:focus-visible{outline:2px solid var(--team-1);outline-offset:-2px;}
+.stand th.sortable.on{color:var(--text);}
+.stand .sarrow{font-size:9px;margin-left:3px;color:var(--text-3);}
+.scenrow.done{opacity:.72;}
+.scenrow.done .pk{cursor:default;}
+.scenrow .final{font-family:var(--mono-num);color:var(--text-2);}
 .mv{font-family:var(--mono-num);font-size:11.5px;font-weight:600;}
 .mv.up{color:var(--good);}
 .mv.down{color:var(--bad);}
@@ -1870,6 +1878,9 @@ const OPPS={}; ALLT.forEach(t=>OPPS[t]=[]);
 GAMES.forEach(g=>{OPPS[g.home].push(g.away);OPPS[g.away].push(g.home);});
 const OPPSET={}; ALLT.forEach(t=>OPPSET[t]=new Set(OPPS[t]));
 
+/** a game with a final score; its outcome is a fact, never a simulation input */
+function played(g){ return g.result !== null && g.result !== undefined; }
+
 function tally(out){
   // out[i] = 1 home win, 0 away win
   const pts={},n={},cp={},cn={},dp={},dn={},h2h={};
@@ -1959,7 +1970,16 @@ function runSim(n){
   for(let s=0;s<n;s++){
     for(let i=0;i<GAMES.length;i++){
       const g=GAMES[i], f=EFF[g.id];
-      out[i]= f==='home'?1 : f==='away'?0 : (Math.random()<g.wp?1:0);
+      // A game that has been played is not a coin flip. Simulating it from win
+      // probability lets a team "win" games it actually lost, which inflates the
+      // projected record past what is arithmetically possible and corrupts every
+      // playoff and division number derived from the same outcomes. Fact first,
+      // then any forced scenario, then simulate. A tie counts half to each side,
+      // which the tallies and tiebreakers handle as fractions throughout.
+      out[i] = played(g) ? (g.result>0 ? 1 : g.result<0 ? 0 : 0.5)
+             : f==='home' ? 1
+             : f==='away' ? 0
+             : (Math.random()<g.wp ? 1 : 0);
     }
     const S=tally(out), M=mk(S);
     ALLT.forEach(t=>res[t].wins+=S.pts[t]);
@@ -1983,6 +2003,31 @@ function runSim(n){
 /* ============ STANDINGS VIEW ============ */
 let standMode='division', standBasis='current';
 
+/* Sort is by what has actually happened, not what we project. Columns are
+   clickable; each knows which direction is "best first" so the first click on a
+   column always shows the interesting end of it. */
+const STAND_SORTS = {
+  team: {dir: 1,  get: (t,r)=>t},
+  rec:  {dir:-1,  get: (t,r)=>recOf(t).pct, tie:(t)=>[recOf(t).w, recOf(t).diff]},
+  proj: {dir:-1,  get: (t,r)=>r.avgWins},
+  div:  {dir:-1,  get: (t,r)=>r.divPct, tie:(t,r)=>[r.avgWins]},
+  pl:   {dir:-1,  get: (t,r)=>r.plPct,  tie:(t,r)=>[r.avgWins]},
+};
+let standSort = {key:'rec', dir:STAND_SORTS.rec.dir};
+
+function standCompare(R){
+  const s=STAND_SORTS[standSort.key]||STAND_SORTS.rec;
+  const d=standSort.dir;
+  return (a,b)=>{
+    const va=s.get(a,R[a]), vb=s.get(b,R[b]);
+    if(va<vb) return -d;
+    if(va>vb) return  d;
+    const ta=s.tie?s.tie(a,R[a]):[], tb=s.tie?s.tie(b,R[b]):[];
+    for(let i=0;i<ta.length;i++){ if(ta[i]!==tb[i]) return ta[i]<tb[i] ? -d : d; }
+    return a<b ? -1 : a>b ? 1 : 0;
+  };
+}
+
 /** projection using the frozen preseason win probabilities instead of today's */
 function runSimPreseason(n){
   if(!PRESEASON) return null;
@@ -2002,10 +2047,27 @@ function runSimPreseason(n){
 }
 let preCache=null;
 
+/** clicking a column header re-sorts; clicking the active one flips it */
+function bindStandHeaders(){
+  document.querySelectorAll('#standBody th.sortable').forEach(th=>{
+    const go=()=>{
+      const k=th.dataset.k;
+      if(standSort.key===k) standSort.dir = -standSort.dir;
+      else standSort = {key:k, dir:(STAND_SORTS[k]||STAND_SORTS.rec).dir};
+      renderStand();
+    };
+    th.addEventListener('click',go);
+    th.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } });
+  });
+}
+
 function recOf(t){
   const r=(SJ.records||{})[t];
-  if(!r) return {w:0,l:0,t:0,played:0};
-  return {w:r.w,l:r.l,t:r.t,played:r.w+r.l+r.t};
+  if(!r) return {w:0,l:0,t:0,played:0,pct:0,diff:0};
+  const played=r.w+r.l+r.t;
+  return {w:r.w, l:r.l, t:r.t, played,
+          pct: played ? (r.w+0.5*r.t)/played : 0,
+          diff: (r.pf||0)-(r.pa||0)};
 }
 
 function renderStand(){
@@ -2024,29 +2086,38 @@ function renderStand(){
       <td class="hi">${(r.plPct*100).toFixed(0)}%</td>
     </tr>`;
   };
-  const head=`<thead><tr><th>Team</th><th>Record</th><th>Proj record</th><th>Win div</th><th>Playoffs</th></tr></thead>`;
+  const COLS=[['team','Team'],['rec','Record'],['proj','Proj record'],['div','Win div'],['pl','Playoffs']];
+  const head=`<thead><tr>${COLS.map(([k,lab])=>{
+    const on=standSort.key===k;
+    const arrow=on ? (standSort.dir===-1?'&#9660;':'&#9650;') : '';
+    return `<th class="sortable${on?' on':''}" data-k="${k}" role="button" tabindex="0"
+      aria-sort="${on?(standSort.dir===-1?'descending':'ascending'):'none'}">${lab}<span class="sarrow">${arrow}</span></th>`;
+  }).join('')}</tr></thead>`;
+
+  const cmp=standCompare(R);
   let html='';
   if(standMode==='division'){
     for(const d of Object.keys(DIVS)){
-      const ts=DIVS[d].slice().sort((a,b)=>R[b].avgWins-R[a].avgWins);
+      const ts=DIVS[d].slice().sort(cmp);
       html+=`<div class="stgroup"><div class="dayhead">${d}</div>
         <table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
     }
   } else if(standMode==='conference'){
     for(const c of ['AFC','NFC']){
-      const ts=ALLT.filter(t=>T2C[t]===c).sort((a,b)=>R[b].plPct-R[a].plPct||R[b].avgWins-R[a].avgWins);
+      const ts=ALLT.filter(t=>T2C[t]===c).sort(cmp);
       html+=`<div class="stgroup"><div class="dayhead">${c}</div>
         <table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
     }
   } else {
-    const ts=ALLT.slice().sort((a,b)=>R[b].avgWins-R[a].avgWins);
+    const ts=ALLT.slice().sort(cmp);
     html=`<div class="stgroup"><table class="tracks stand">${head}<tbody>${ts.map((t,i)=>row(t,R[t],i+1)).join('')}</tbody></table></div>`;
   }
-  host.innerHTML=html+`<div class="tvnote">Projected from ${simN.toLocaleString()} simulated seasons with full NFL tiebreakers; projected records are averages, so they carry decimals.
+  host.innerHTML=html+`<div class="tvnote">Projected from ${simN.toLocaleString()} simulated seasons with full NFL tiebreakers. Results already on the board are held fixed and only the remaining games are simulated, so a projected record can never run past what is still reachable. Projections are averages across those seasons, so they carry decimals.
     ${usePre
       ? `Showing the <b>preseason</b> projection, frozen ${PRESEASON.frozen.slice(0,10)} after ${PRESEASON.played_when_frozen} game${PRESEASON.played_when_frozen===1?'':'s'}. It never updates, so you can measure how the year diverged from what we expected.`
       : `Showing the <b>current</b> projection, which folds in every result so far.`}
     ${Object.keys(effForced()).length?`<b>${Object.keys(effForced()).length} game${Object.keys(effForced()).length>1?'s':''} forced</b> in the scenario tab.`:''}</div>`;
+  bindStandHeaders();
 }
 
 /* ============ SCENARIO VIEW ============ */
@@ -2057,6 +2128,16 @@ function renderScen(){
   $('#scenGames').innerHTML = games.map(g=>{
     const f=effForced()[g.id];
     const imported = useMyPicks && !forced[g.id] && picksAsForced()[g.id];
+    if(played(g)){
+      // already decided: show the result rather than offering a what-if the
+      // simulation would ignore anyway
+      const hw=g.result>0, tie=g.result===0;
+      return `<div class="scenrow done" data-g="${g.id}">
+        <button class="pk ${!hw&&!tie?'on':''}" disabled style="--c:${TEAMS[g.away][0]}">${g.away}</button>
+        <button class="pk ${hw?'on':''}" disabled style="--c:${TEAMS[g.home][0]}">${g.home}</button>
+        <span class="scenwp final">${g.away} ${g.as_}&ndash;${g.hs} ${g.home}</span>
+      </div>`;
+    }
     return `<div class="scenrow${imported?' imported':''}" data-g="${g.id}">
       <button class="pk ${f==='away'?'on':''}" data-w="away" style="--c:${TEAMS[g.away][0]}">${g.away}</button>
       <button class="pk ${f==='home'?'on':''}" data-w="home" style="--c:${TEAMS[g.home][0]}">${g.home}</button>
@@ -2075,7 +2156,7 @@ function renderScen(){
   const n=Object.keys(effForced()).length;
   $('#scenCount').innerHTML = n
     ? `${n} game${n>1?'s':''} locked${nImp?` (${nImp} from your slate picks)`:''} &middot; <button id="clearF" class="segbtn">Clear forced</button>`
-    : 'Tap a team to force that result. Everything else stays simulated.';
+    : 'Tap a team to force that result. Everything else stays simulated. Games already played are fixed.';
   const cf=$('#clearF'); if(cf) cf.addEventListener('click',()=>{forced={};simCache=null;renderScen();renderStand();try{localStorage.removeItem('forced');}catch(e){}});
 
   const seeds={};
